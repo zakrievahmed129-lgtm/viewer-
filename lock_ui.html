@@ -1451,10 +1451,15 @@
     </div>
 
     <script>
-        // Neutralisation absolue de tout drag & drop, clic droit et sélection parasite
+        // Neutralisation absolue de tout drag & drop, clic droit, sélection parasite et glissement de fenêtre
         window.addEventListener('dragstart', (e) => e.preventDefault(), true);
         window.addEventListener('contextmenu', (e) => e.preventDefault(), true);
         window.addEventListener('selectstart', (e) => e.preventDefault(), true);
+        window.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('button, .pin-key, .lock-hub, .pin-trigger-pill, .pin-card')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         // ====================================================================
         // GESTION DU CANVAS PARTICULES COSMIQUES & ÉTINCELLES DYNAMIQUES (60 FPS)
@@ -1617,33 +1622,15 @@
         animateParticles();
 
         // ====================================================================
-        // INCLINAISON PARALLAXE 3D ET SPOTLIGHT AU CURSEUR DE SOURIS
+        // ÉCLAIRAGE SPÉCULAIRE DYNAMIQUE AU CURSEUR SANS AUCUN DÉPLACEMENT DE LA CARTE
         // ====================================================================
         const spatialWrapper = document.getElementById('spatialWrapper');
-        let mouseTargetX = 0, mouseTargetY = 0;
-        let currentTiltX = 0, currentTiltY = 0;
 
         window.addEventListener('mousemove', (e) => {
-            const cx = window.innerWidth / 2;
-            const cy = window.innerHeight / 2;
-            mouseTargetX = ((e.clientX - cx) / cx) * 5.5;  // Max 5.5 degrés de tilt
-            mouseTargetY = -((e.clientY - cy) / cy) * 5.5;
-
-            // Mise à jour de la lueur spéculaire sur le verre
+            // Mise à jour du reflet lumineux sur le verre sans jamais déplacer ni incliner la carte
             document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
             document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
         });
-
-        function renderParallax() {
-            currentTiltX += (mouseTargetX - currentTiltX) * 0.08;
-            currentTiltY += (mouseTargetY - currentTiltY) * 0.08;
-
-            if (spatialWrapper && document.body.classList.contains('locked') && !spatialWrapper.classList.contains('modal-depth')) {
-                spatialWrapper.style.transform = `translate(-50%, -50%) rotateY(${currentTiltX.toFixed(2)}deg) rotateX(${currentTiltY.toFixed(2)}deg)`;
-            }
-            requestAnimationFrame(renderParallax);
-        }
-        renderParallax();
 
         // ====================================================================
         // GESTION DU CADENAS & CINÉMATIQUES SPATIALES APPLE VISION PRO

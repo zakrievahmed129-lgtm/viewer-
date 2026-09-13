@@ -207,15 +207,119 @@ def cleanup_system():
 # ==============================================================================
 # SÉCURISATION WIN32 DE LA FENÊTRE (ANTI-DÉPLACEMENT & ANCRAGE PLEIN ÉCRAN)
 # ==============================================================================
+class WINDOWPOS(ctypes.Structure):
+    _fields_ = [
+        ('hwnd', wintypes.HWND),
+        ('hwndInsertAfter', wintypes.HWND),
+        ('x', ctypes.c_int),
+        ('y', ctypes.c_int),
+        ('cx', ctypes.c_int),
+        ('cy', ctypes.c_int),
+        ('flags', wintypes.UINT)
+    ]
+
+_WNDPROC_TYPE = ctypes.WINFUNCTYPE(ctypes.c_longlong, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+_original_wndproc = None
+_subclass_wndproc_ref = None
+
+def get_screen_bounds():
+    user32 = ctypes.windll.user32
+    SM_XVIRTUALSCREEN = 76
+    SM_YVIRTUALSCREEN = 77
+    SM_CXVIRTUALSCREEN = 78
+    SM_CYVIRTUALSCREEN = 79
+    vx = user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
+    vy = user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
+    vw = user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
+    vh = user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
+    if vw <= 0 or vh <= 0:
+        vx, vy = 0, 0
+        vw = user32.GetSystemMetrics(0)
+        vh = user32.GetSystemMetrics(1)
+    return vx, vy, vw, vh
+
 def get_shield_hwnd():
+    """Résolution 100% fiable du handle Win32 natif de la fenêtre PyWebView (IntPtr safe)"""
     try:
         if shield_instance and shield_instance.window and hasattr(shield_instance.window, 'native'):
             native_win = shield_instance.window.native
-            if hasattr(native_win, 'Handle'):
-                return int(native_win.Handle)
+            if native_win is not None and hasattr(native_win, 'Handle'):
+                h = native_win.Handle
+                if hasattr(h, 'ToInt64'):
+                    return int(h.ToInt64())
+                return int(str(h))
+    except Exception:
+        pass
+    try:
+        user32 = ctypes.windll.user32
+        found = []
+        def enum_cb(h, l):
+            length = user32.GetWindowTextLengthW(h)
+            buff = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(h, buff, length + 1)
+            if "GhostLock Shield" in buff.value:
+                found.append(h)
+            return True
+        CMPFUNC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
+        user32.EnumWindows(CMPFUNC(enum_cb), 0)
+        if found:
+            return found[0]
     except Exception:
         pass
     return ctypes.windll.user32.FindWindowW(None, "GhostLock Shield")
+
+def _lock_shield_wndproc(hwnd, msg, wparam, lparam):
+    global _original_wndproc
+    user32 = ctypes.windll.user32
+
+    # Si le bouclier est verrouillé, blocage inconditionnel de tout déplacement ou redimensionnement
+    if shield_instance and shield_instance.is_locked:
+        # 1. Blocage des commandes système (SC_MOVE, SC_SIZE, SC_MINIMIZE, SC_MAXIMIZE, SC_CLOSE, SC_RESTORE)
+        if msg == 0x0112:  # WM_SYSCOMMAND
+            cmd = wparam & 0xFFF0
+            if cmd in (0xF010, 0xF000, 0xF020, 0xF030, 0xF060, 0xF120):
+                return 0
+
+        # 2. Neutralisation de la zone de titre (HTCAPTION=2) et bordures de dimensionnement (10..17)
+        elif msg == 0x0084:  # WM_NCHITTEST
+            res = user32.CallWindowProcW(_original_wndproc, hwnd, msg, wparam, lparam)
+            if res == 2 or (10 <= res <= 17):
+                return 1  # HTCLIENT (empêche Windows d'initier un glisser-déposer de fenêtre)
+            return res
+
+        # 3. Ancrage au niveau du noyau de fenêtrage Windows (rejet de tout changement de coordonnées)
+        elif msg == 0x0046:  # WM_WINDOWPOSCHANGING
+            if lparam:
+                try:
+                    vx, vy, vw, vh = get_screen_bounds()
+                    pos = ctypes.cast(lparam, ctypes.POINTER(WINDOWPOS)).contents
+                    pos.x = vx
+                    pos.y = vy
+                    pos.cx = vw
+                    pos.cy = vh
+                    # SWP_NOMOVE (0x0002) | SWP_NOSIZE (0x0001)
+                    pos.flags |= (0x0002 | 0x0001)
+                except Exception:
+                    pass
+            return 0
+
+        # 4. Blocage de WM_MOVING et WM_SIZING
+        elif msg in (0x0216, 0x0214):
+            return 0
+
+    return user32.CallWindowProcW(_original_wndproc, hwnd, msg, wparam, lparam)
+
+def apply_window_subclass(hwnd):
+    global _original_wndproc, _subclass_wndproc_ref
+    if not hwnd or _original_wndproc is not None:
+        return
+    try:
+        user32 = ctypes.windll.user32
+        _subclass_wndproc_ref = _WNDPROC_TYPE(_lock_shield_wndproc)
+        _original_wndproc = user32.SetWindowLongPtrW(hwnd, -4, _subclass_wndproc_ref)  # GWLP_WNDPROC = -4
+        log("[OK] Subclassing Win32 actif : Rejet absolu de SC_MOVE, WM_NCHITTEST et WM_WINDOWPOSCHANGING.")
+    except Exception as e:
+        log(f"[!] Erreur application subclassing: {e}")
 
 def pin_window_fullscreen(hwnd=None):
     """Force la fenêtre à occuper l'intégralité de l'écran en position TOPMOST sans bouger"""
@@ -225,21 +329,7 @@ def pin_window_fullscreen(hwnd=None):
         return
     try:
         user32 = ctypes.windll.user32
-        SM_CXSCREEN = 0
-        SM_CYSCREEN = 1
-        SM_CXVIRTUALSCREEN = 78
-        SM_CYVIRTUALSCREEN = 79
-        SM_XVIRTUALSCREEN = 76
-        SM_YVIRTUALSCREEN = 77
-
-        vx = user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
-        vy = user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
-        vw = user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
-        vh = user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
-        if vw <= 0 or vh <= 0:
-            vx, vy = 0, 0
-            vw = user32.GetSystemMetrics(SM_CXSCREEN)
-            vh = user32.GetSystemMetrics(SM_CYSCREEN)
+        vx, vy, vw, vh = get_screen_bounds()
 
         HWND_TOPMOST = -1
         SWP_SHOWWINDOW = 0x0040
@@ -258,33 +348,54 @@ def harden_lock_window():
     try:
         user32 = ctypes.windll.user32
         GWL_STYLE = -16
+        GWL_EXSTYLE = -20
         WS_POPUP = 0x80000000
         WS_CAPTION = 0x00C00000
         WS_THICKFRAME = 0x00040000
         WS_MINIMIZEBOX = 0x00020000
         WS_MAXIMIZEBOX = 0x00010000
         WS_SYSMENU = 0x00080000
+        WS_EX_TOPMOST = 0x00000008
 
         current_style = user32.GetWindowLongW(hwnd, GWL_STYLE)
         new_style = (current_style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU)) | WS_POPUP
         user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
 
+        current_exstyle = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        user32.SetWindowLongW(hwnd, GWL_EXSTYLE, current_exstyle | WS_EX_TOPMOST)
+
         # Vider le menu système pour neutraliser SC_MOVE, SC_SIZE, SC_CLOSE, etc.
         hmenu = user32.GetSystemMenu(hwnd, False)
         if hmenu:
-            SC_SIZE = 0xF000
-            SC_MOVE = 0xF010
-            SC_MINIMIZE = 0xF020
-            SC_MAXIMIZE = 0xF030
-            SC_CLOSE = 0xF060
-            SC_RESTORE = 0xF120
-            MF_BYCOMMAND = 0x0000
-            for sc in (SC_MOVE, SC_SIZE, SC_CLOSE, SC_MINIMIZE, SC_MAXIMIZE, SC_RESTORE):
-                user32.RemoveMenu(hmenu, sc, MF_BYCOMMAND)
+            for sc in (0xF010, 0xF000, 0xF060, 0xF020, 0xF030, 0xF120):
+                user32.RemoveMenu(hmenu, sc, 0)
 
         pin_window_fullscreen(hwnd)
+        apply_window_subclass(hwnd)
     except Exception as e:
         log(f"[!] Erreur hardening fenêtre: {e}")
+
+def _window_pin_watchdog():
+    """Surveillance 100ms : Verrouille la fenêtre sur ses coordonnées physiques sans déviation possible"""
+    user32 = ctypes.windll.user32
+    class RECT(ctypes.Structure):
+        _fields_ = [('left', ctypes.c_long), ('top', ctypes.c_long), ('right', ctypes.c_long), ('bottom', ctypes.c_long)]
+
+    rect = RECT()
+    while True:
+        time.sleep(0.1)
+        if shield_instance and shield_instance.is_locked:
+            hwnd = get_shield_hwnd()
+            if hwnd:
+                try:
+                    vx, vy, vw, vh = get_screen_bounds()
+                    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                    cur_w = rect.right - rect.left
+                    cur_h = rect.bottom - rect.top
+                    if rect.left != vx or rect.top != vy or cur_w != vw or cur_h != vh:
+                        user32.SetWindowPos(hwnd, -1, vx, vy, vw, vh, 0x0040 | 0x0020 | 0x0010)
+                except Exception:
+                    pass
 
 # ==============================================================================
 # CAPTURE HAUTE VITESSE DU BUREAU (WIN32 GDI - ~35ms)
@@ -454,6 +565,10 @@ class BiometricLockShield:
         # Émission périodique du statut (Heartbeat)
         self.status_beacon_thread = threading.Thread(target=self._status_beacon_loop, daemon=True)
         self.status_beacon_thread.start()
+
+        # Watchdog d'ancrage absolu (anti-déplacement Win32)
+        self.pin_watchdog_thread = threading.Thread(target=_window_pin_watchdog, daemon=True)
+        self.pin_watchdog_thread.start()
 
         # Suivi d'inactivité du viewer (fermeture auto de ghost_script si quitté > 5 min)
         self.viewer_is_open = False
@@ -864,6 +979,11 @@ if __name__ == "__main__":
     if not os.path.exists(bg_path):
         capture_desktop_background(bg_path)
     
+    try:
+        webview.settings['DRAG_REGION_SELECTOR'] = ''
+    except Exception:
+        pass
+
     # hidden=True est CRUCIAL pour éviter tout flash blanc au lancement de l'application
     shield.window = webview.create_window(
         'GhostLock Shield',
@@ -872,6 +992,9 @@ if __name__ == "__main__":
         on_top=True,
         frameless=True,
         hidden=True,
+        easy_drag=False,
+        resizable=False,
+        draggable=False,
         background_color='#05060b',
         js_api=api
     )
