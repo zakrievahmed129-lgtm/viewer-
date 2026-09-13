@@ -147,12 +147,13 @@ class GhostAlertActivity : AppCompatActivity() {
                     connectionTimeout = 5
                 }
                 client.connect(opts)
+                val targetPc = GhostPrefs.getSelectedPc(this@GhostAlertActivity)
                 val json = JSONObject().apply {
                     put("action", "lock")
                     put("device", "redmi_a3")
                     put("timestamp", System.currentTimeMillis())
                 }
-                client.publish("ghost_lock/pc-zakriev/cmd", MqttMessage(json.toString().toByteArray()).apply { qos = 1 })
+                client.publish("ghost_lock/$targetPc/cmd", MqttMessage(json.toString().toByteArray()).apply { qos = 1 })
                 client.disconnect()
             } catch (e: Exception) {
                 e.printStackTrace()

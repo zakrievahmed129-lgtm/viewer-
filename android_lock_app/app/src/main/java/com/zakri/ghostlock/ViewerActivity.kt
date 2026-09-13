@@ -22,8 +22,8 @@ class ViewerActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private var mqttClient: MqttClient? = null
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val targetPc = "pc-zakriev"
-    private val topicCmd = "ghost_lock/$targetPc/cmd"
+    private var targetPc = "pc-zakriev"
+    private var topicCmd = "ghost_lock/$targetPc/cmd"
     private var isHeartbeatActive = false
 
     private val heartbeatRunnable = object : Runnable {
@@ -39,6 +39,8 @@ class ViewerActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        targetPc = GhostPrefs.getSelectedPc(this)
+        topicCmd = "ghost_lock/$targetPc/cmd"
 
         // Plein écran et garder l'écran allumé pendant le visionnage
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

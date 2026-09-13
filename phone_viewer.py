@@ -17,13 +17,21 @@ import json
 import threading
 import webbrowser
 import urllib.request
+import socket
 from datetime import datetime
 import webview
 import paho.mqtt.client as mqtt
 
 MQTT_BROKER = "broker.hivemq.com"
 MQTT_PORT = 1883
-TARGET_PC = "pc-zakriev"
+
+# Détection automatique de la machine locale ou sélection manuelle (--target <nom>)
+local_host = socket.gethostname().lower()
+TARGET_PC = os.environ.get("GHOST_TARGET_PC", local_host)
+for i, arg in enumerate(sys.argv):
+    if arg in ("--target", "-t") and i + 1 < len(sys.argv):
+        TARGET_PC = sys.argv[i + 1].strip().lower()
+
 TOPIC_STREAM_STATUS = f"ghost_lock/{TARGET_PC}/phone_stream/status"
 TOPIC_STREAM_CMD = f"ghost_lock/{TARGET_PC}/phone_stream/cmd"
 

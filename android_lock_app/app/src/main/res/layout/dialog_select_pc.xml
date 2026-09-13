@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_alert_card"
+    android:orientation="vertical"
+    android:padding="22dp">
+
+    <!-- En-tête du Sélecteur -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🖥️"
+            android:textSize="26sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SÉLECTION DU PC BOUCLIER"
+                android:textColor="#00F0FF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Choisissez l'ordinateur à contrôler et surveiller"
+                android:textColor="#94A3B8"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="16dp"
+        android:background="#242F4B" />
+
+    <!-- Liste des Ordinateurs Détectés & Connus -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fadeScrollbars="false"
+        android:maxHeight="280dp">
+
+        <LinearLayout
+            android:id="@+id/layoutPcContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <!-- Zone d'ajout manuel de PC -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/etCustomPcName"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_pc_item_normal"
+            android:hint="Autre PC (ex: pc-salon)"
+            android:imeOptions="actionDone"
+            android:inputType="textNoSuggestions|textUri"
+            android:paddingHorizontal="14dp"
+            android:textColor="#F8FAFC"
+            android:textColorHint="#64748B"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnAddCustomPc"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_btn_stream"
+            android:paddingHorizontal="14dp"
+            android:text="➕ Ajouter"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Option : Demander à chaque démarrage -->
+    <CheckBox
+        android:id="@+id/cbAlwaysAskStartup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:checked="true"
+        android:buttonTint="#00F0FF"
+        android:text="Toujours choisir le PC au démarrage de l'app"
+        android:textColor="#C7D2FE"
+        android:textSize="12sp" />
+
+    <!-- Boutons d'Action -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnClosePcDialog"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_btn_ghost"
+            android:text="Fermer"
+            android:textAllCaps="false"
+            android:textColor="#94A3B8"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnApplyPcSelection"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1.5"
+            android:background="@drawable/bg_btn_stream"
+            android:text="⚡ Se Connecter"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>

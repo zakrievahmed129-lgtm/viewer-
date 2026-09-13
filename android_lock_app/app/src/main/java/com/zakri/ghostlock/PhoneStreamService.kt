@@ -105,14 +105,17 @@ class PhoneStreamService : Service() {
 
     // MQTT Control
     private var mqttClient: MqttClient? = null
-    private val targetPc = "pc-zakriev"
+    private var targetPc = "pc-zakriev"
     private val brokerUri = "tcp://broker.hivemq.com:1883"
-    private val topicStreamStatus = "ghost_lock/$targetPc/phone_stream/status"
-    private val topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
+    private var topicStreamStatus = "ghost_lock/$targetPc/phone_stream/status"
+    private var topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+        targetPc = GhostPrefs.getSelectedPc(this)
+        topicStreamStatus = "ghost_lock/$targetPc/phone_stream/status"
+        topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
         phoneIp = resolveLocalIp()
         createNotificationChannel()
 
@@ -127,9 +130,37 @@ class PhoneStreamService : Service() {
         connectMqtt()
     }
 
+    fun switchTargetPc(newPc: String) {
+        val clean = newPc.trim().lowercase()
+        if (clean.isEmpty() || clean == targetPc) return
+        val oldPc = targetPc
+        targetPc = clean
+        topicStreamStatus = "ghost_lock/$targetPc/phone_stream/status"
+        topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
+        Thread {
+            try {
+                mqttClient?.let { client ->
+                    if (client.isConnected) {
+                        try {
+                            client.unsubscribe("ghost_lock/$oldPc/phone_stream/cmd")
+                        } catch (e: Exception) {}
+                        client.subscribe(topicStreamCmd, 1)
+                        publishStreamStatus()
+                    }
+                }
+            } catch (e: Exception) {}
+        }.start()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action ?: "DEFAULT"
         phoneIp = resolveLocalIp()
+
+        if (action == "ACTION_CHANGE_TARGET_PC") {
+            val newPc = intent?.getStringExtra("target_pc") ?: GhostPrefs.getSelectedPc(this)
+            switchTargetPc(newPc)
+            return START_STICKY
+        }
 
         when (action) {
             "START_SCREEN" -> {

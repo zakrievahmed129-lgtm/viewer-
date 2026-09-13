@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutItemRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_pc_item_normal"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="14dp">
+
+    <!-- Icône Ordinateur -->
+    <TextView
+        android:id="@+id/tvPcIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:text="🖥️"
+        android:textSize="22sp" />
+
+    <!-- Informations du PC -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvPcItemName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="pc-zakriev"
+            android:textColor="#F8FAFC"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvPcItemStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="🟢 En ligne • 🔒 Verrouillé"
+            android:textColor="#38BDF8"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Badge Actif / Sélecteur -->
+    <TextView
+        android:id="@+id/tvPcItemCheck"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_pill_badge"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="4dp"
+        android:text="ACTIF ✓"
+        android:textColor="#00F0FF"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

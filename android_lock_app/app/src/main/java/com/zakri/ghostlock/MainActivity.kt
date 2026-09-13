@@ -38,7 +38,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.net.Uri
 import android.os.PowerManager
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.view.View
+import android.view.Window
+import android.view.ViewGroup
 import com.zakri.ghostlock.databinding.ActivityMainBinding
+import com.zakri.ghostlock.databinding.DialogSelectPcBinding
+import com.zakri.ghostlock.databinding.ItemPcChoiceBinding
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -47,18 +55,30 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import org.json.JSONObject
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    // Paramètres MQTT
+    // Paramètres MQTT & Multi-PC
     private val brokerUri = "tcp://broker.hivemq.com:1883"
-    private val targetPc = "pc-zakriev"
-    private val topicStatus = "ghost_lock/$targetPc/status"
-    private val topicCmd = "ghost_lock/$targetPc/cmd"
-    private val topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+    private var targetPc = "pc-zakriev"
+    private var topicStatus = "ghost_lock/$targetPc/status"
+    private var topicCmd = "ghost_lock/$targetPc/cmd"
+    private var topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+
+    data class DiscoveredPc(
+        val name: String,
+        var isOnline: Boolean = true,
+        var isLocked: Boolean = true,
+        var lastSeen: Long = System.currentTimeMillis(),
+        var timeStr: String = ""
+    )
+
+    private val discoveredPcs = ConcurrentHashMap<String, DiscoveredPc>()
+    private var pcSelectorDialog: Dialog? = null
 
     // Bluetooth BLE (Balise de Proximité RSSI)
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -138,7 +158,13 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        targetPc = GhostPrefs.getSelectedPc(this)
+        topicStatus = "ghost_lock/$targetPc/status"
+        topicCmd = "ghost_lock/$targetPc/cmd"
+        topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+
         binding.tvPcName.text = "🖥️ $targetPc"
+        updateDiscoveredCountUI()
 
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
@@ -146,6 +172,15 @@ class MainActivity : AppCompatActivity() {
         setupListeners()
         setupBluetooth()
         startPersistentBackgroundService()
+
+        // Lancement automatique du sélecteur au démarrage si configuré
+        if (GhostPrefs.isAskOnStartup(this)) {
+            mainHandler.postDelayed({
+                if (!isFinishing && !isDestroyed) {
+                    showPcSelectorDialog()
+                }
+            }, 500)
+        }
 
         // Demande de permission Caméra au démarrage pour autoriser la diffusion distante
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -489,6 +524,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        binding.layoutPcNameClickable.setOnClickListener {
+            showPcSelectorDialog()
+        }
+
+        binding.tvBtnChangePc.setOnClickListener {
+            showPcSelectorDialog()
+        }
+
+        binding.layoutPcSelectorHeader.setOnClickListener {
+            showPcSelectorDialog()
+        }
+
         binding.btnUnlockBiometric.setOnClickListener {
             triggerBiometricAuth("unlock")
         }
@@ -606,22 +653,40 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     override fun messageArrived(topic: String?, message: MqttMessage?) {
+                        val currentTopic = topic ?: return
                         val payloadStr = message?.toString() ?: return
                         try {
                             val json = JSONObject(payloadStr)
-                            val locked = json.optBoolean("locked", false)
-                            val online = json.optBoolean("online", true)
-                            val armed = json.optBoolean("armed", false)
-                            val timeStr = json.optString("time_str", "")
-                            val rssi = if (json.has("rssi") && !json.isNull("rssi")) json.optInt("rssi") else null
-                            if (online) {
-                                lastPcPacketTimestamp = System.currentTimeMillis()
-                                lastPcTimeStr = timeStr
-                            } else {
-                                lastPcPacketTimestamp = 0L
-                            }
-                            mainHandler.post {
-                                updatePcStatusUI(locked, timeStr, online, armed, rssi)
+                            val parts = currentTopic.split("/")
+                            if (parts.size >= 3 && parts[0] == "ghost_lock" && parts[2] == "status") {
+                                val pcName = parts[1]
+                                val locked = json.optBoolean("locked", false)
+                                val online = json.optBoolean("online", true)
+                                val armed = json.optBoolean("armed", false)
+                                val timeStr = json.optString("time_str", "")
+                                val rssi = if (json.has("rssi") && !json.isNull("rssi")) json.optInt("rssi") else null
+
+                                discoveredPcs[pcName] = DiscoveredPc(
+                                    name = pcName,
+                                    isOnline = online,
+                                    isLocked = locked,
+                                    lastSeen = System.currentTimeMillis(),
+                                    timeStr = timeStr
+                                )
+                                GhostPrefs.addKnownPc(this@MainActivity, pcName)
+
+                                mainHandler.post {
+                                    updateDiscoveredCountUI()
+                                    if (pcName.equals(targetPc, ignoreCase = true)) {
+                                        if (online) {
+                                            lastPcPacketTimestamp = System.currentTimeMillis()
+                                            lastPcTimeStr = timeStr
+                                        } else {
+                                            lastPcPacketTimestamp = 0L
+                                        }
+                                        updatePcStatusUI(locked, timeStr, online, armed, rssi)
+                                    }
+                                }
                             }
                         } catch (e: Exception) {}
                     }
@@ -630,7 +695,20 @@ class MainActivity : AppCompatActivity() {
                 })
 
                 mqttClient?.connect(options)
+                mqttClient?.subscribe("ghost_lock/+/status", 1)
                 mqttClient?.subscribe(topicStatus, 1)
+                mqttClient?.subscribe(topicCmd, 1)
+                mqttClient?.subscribe("ghost_lock/$targetPc/phone_stream/cmd", 1)
+
+                // Demande immédiate d'état du PC
+                try {
+                    val req = JSONObject().apply {
+                        put("action", "get_status")
+                        put("device", "redmi_a3")
+                        put("timestamp", System.currentTimeMillis())
+                    }
+                    mqttClient?.publish(topicCmd, MqttMessage(req.toString().toByteArray()).apply { qos = 1 })
+                } catch (e: Exception) {}
 
                 mainHandler.post {
                     binding.tvCloudStatus.text = "CLOUD CONNECTÉ"
@@ -645,6 +723,175 @@ class MainActivity : AppCompatActivity() {
                 mainHandler.postDelayed({ connectMqtt() }, 5000)
             }
         }.start()
+    }
+
+    private fun updateDiscoveredCountUI() {
+        val totalKnown = GhostPrefs.getKnownPcs(this).size
+        val onlineCount = discoveredPcs.values.count { it.isOnline && (System.currentTimeMillis() - it.lastSeen < 60000) }
+        binding.tvDiscoveredCount.text = when {
+            onlineCount > 1 -> "🟢 $onlineCount PCs en ligne détectés • Toucher pour changer"
+            onlineCount == 1 -> "🟢 1 PC en ligne • Toucher pour changer"
+            else -> "$totalKnown PC(s) mémorisé(s) • Toucher pour changer"
+        }
+    }
+
+    fun showPcSelectorDialog() {
+        if (isFinishing || isDestroyed) return
+        try {
+            pcSelectorDialog?.dismiss()
+        } catch (e: Exception) {}
+
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialogBinding = DialogSelectPcBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+
+        var tempSelectedPc = targetPc
+        dialogBinding.cbAlwaysAskStartup.isChecked = GhostPrefs.isAskOnStartup(this)
+
+        fun refreshList() {
+            dialogBinding.layoutPcContainer.removeAllViews()
+            val allPcs = LinkedHashSet<String>()
+            allPcs.add(targetPc)
+            allPcs.addAll(discoveredPcs.keys)
+            allPcs.addAll(GhostPrefs.getKnownPcs(this))
+
+            for (pcName in allPcs) {
+                val itemBinding = ItemPcChoiceBinding.inflate(layoutInflater, dialogBinding.layoutPcContainer, false)
+                val isSelected = pcName.equals(tempSelectedPc, ignoreCase = true)
+                val info = discoveredPcs[pcName]
+
+                itemBinding.tvPcItemName.text = pcName
+
+                val isOnline = info?.isOnline == true && (System.currentTimeMillis() - (info?.lastSeen ?: 0) < 60000)
+                if (isOnline) {
+                    val lockStateStr = if (info?.isLocked == true) "🔒 Verrouillé" else "🔓 Déverrouillé"
+                    itemBinding.tvPcItemStatus.text = "🟢 En ligne • $lockStateStr"
+                    itemBinding.tvPcItemStatus.setTextColor(ContextCompat.getColor(this, R.color.emerald))
+                } else {
+                    itemBinding.tvPcItemStatus.text = "⚪ Hors ligne / En attente"
+                    itemBinding.tvPcItemStatus.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
+                }
+
+                if (isSelected) {
+                    itemBinding.layoutItemRoot.setBackgroundResource(R.drawable.bg_pc_item_selected)
+                    itemBinding.tvPcItemCheck.visibility = View.VISIBLE
+                    itemBinding.tvPcItemCheck.text = "ACTIF ✓"
+                    itemBinding.tvPcItemCheck.setTextColor(Color.parseColor("#00F0FF"))
+                } else {
+                    itemBinding.layoutItemRoot.setBackgroundResource(R.drawable.bg_pc_item_normal)
+                    itemBinding.tvPcItemCheck.visibility = View.VISIBLE
+                    itemBinding.tvPcItemCheck.text = "Choisir"
+                    itemBinding.tvPcItemCheck.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
+                }
+
+                itemBinding.layoutItemRoot.setOnClickListener {
+                    tempSelectedPc = pcName
+                    refreshList()
+                }
+
+                dialogBinding.layoutPcContainer.addView(itemBinding.root)
+            }
+        }
+
+        refreshList()
+
+        dialogBinding.btnAddCustomPc.setOnClickListener {
+            val input = dialogBinding.etCustomPcName.text.toString().trim().lowercase()
+            if (input.isNotEmpty()) {
+                GhostPrefs.addKnownPc(this, input)
+                tempSelectedPc = input
+                dialogBinding.etCustomPcName.text.clear()
+                refreshList()
+                Toast.makeText(this, "PC '$input' ajouté !", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialogBinding.btnApplyPcSelection.setOnClickListener {
+            GhostPrefs.setAskOnStartup(this, dialogBinding.cbAlwaysAskStartup.isChecked)
+            if (tempSelectedPc.isNotEmpty() && !tempSelectedPc.equals(targetPc, ignoreCase = true)) {
+                switchTargetPc(tempSelectedPc)
+            }
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnClosePcDialog.setOnClickListener {
+            GhostPrefs.setAskOnStartup(this, dialogBinding.cbAlwaysAskStartup.isChecked)
+            dialog.dismiss()
+        }
+
+        pcSelectorDialog = dialog
+        dialog.show()
+    }
+
+    fun switchTargetPc(newPc: String) {
+        val clean = newPc.trim().lowercase()
+        if (clean.isEmpty()) return
+
+        val oldPc = targetPc
+        targetPc = clean
+        GhostPrefs.setSelectedPc(this, clean)
+
+        topicStatus = "ghost_lock/$targetPc/status"
+        topicCmd = "ghost_lock/$targetPc/cmd"
+        topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+
+        binding.tvPcName.text = "🖥️ $targetPc"
+        binding.tvPcLiveStatus.text = "🟡 EN ATTENTE..."
+        binding.tvPcLiveStatus.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
+
+        Thread {
+            try {
+                mqttClient?.let { client ->
+                    if (client.isConnected) {
+                        try {
+                            client.unsubscribe("ghost_lock/$oldPc/status")
+                            client.unsubscribe("ghost_lock/$oldPc/cmd")
+                            client.unsubscribe("ghost_lock/$oldPc/phone_stream/cmd")
+                        } catch (e: Exception) {}
+
+                        client.subscribe(topicStatus, 1)
+                        client.subscribe(topicCmd, 1)
+                        client.subscribe("ghost_lock/$targetPc/phone_stream/cmd", 1)
+
+                        val req = JSONObject().apply {
+                            put("action", "get_status")
+                            put("device", "redmi_a3")
+                            put("timestamp", System.currentTimeMillis())
+                        }
+                        client.publish(topicCmd, MqttMessage(req.toString().toByteArray()).apply { qos = 1 })
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+
+        try {
+            val serviceIntent = Intent(this, GhostLockService::class.java).apply {
+                action = "ACTION_CHANGE_TARGET_PC"
+                putExtra("target_pc", clean)
+            }
+            startService(serviceIntent)
+        } catch (e: Exception) {}
+
+        try {
+            if (PhoneStreamService.instance != null) {
+                val streamIntent = Intent(this, PhoneStreamService::class.java).apply {
+                    action = "ACTION_CHANGE_TARGET_PC"
+                    putExtra("target_pc", clean)
+                }
+                startService(streamIntent)
+            }
+        } catch (e: Exception) {}
+
+        updateDiscoveredCountUI()
+        Toast.makeText(this, "Connecté à $targetPc", Toast.LENGTH_SHORT).show()
     }
 
     private fun animateUnlockSequence() {
@@ -956,6 +1203,10 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopBleBeacon()
+        try {
+            pcSelectorDialog?.dismiss()
+            pcSelectorDialog = null
+        } catch (e: Exception) {}
         try {
             if (keepScreenReceiver != null) {
                 unregisterReceiver(keepScreenReceiver)

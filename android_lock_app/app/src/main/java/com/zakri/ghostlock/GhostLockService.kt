@@ -62,12 +62,12 @@ class GhostLockService : Service() {
 
     private var mqttClient: MqttClient? = null
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val targetPc = "pc-zakriev"
+    private var targetPc = "pc-zakriev"
     private val brokerUri = "tcp://broker.hivemq.com:1883"
-    private val topicStatus = "ghost_lock/$targetPc/status"
-    private val topicCmd = "ghost_lock/$targetPc/cmd"
-    private val topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
-    private val topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
+    private var topicStatus = "ghost_lock/$targetPc/status"
+    private var topicCmd = "ghost_lock/$targetPc/cmd"
+    private var topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+    private var topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
 
     private var isPcLocked = false
 
@@ -108,8 +108,14 @@ class GhostLockService : Service() {
         instance = this
         isServiceRunning = true
 
+        targetPc = GhostPrefs.getSelectedPc(this)
+        topicStatus = "ghost_lock/$targetPc/status"
+        topicCmd = "ghost_lock/$targetPc/cmd"
+        topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+        topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
+
         createNotificationChannel()
-        val notification = buildNotification("Surveillance active 24/7", "Balise Bluetooth & Cloud connectés")
+        val notification = buildNotification("Surveillance active 24/7", "Connecté à $targetPc")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
@@ -126,11 +132,56 @@ class GhostLockService : Service() {
         registerReceiver(bluetoothReceiver, filter)
     }
 
+    fun switchTargetPc(newPc: String) {
+        val clean = newPc.trim().lowercase()
+        if (clean.isEmpty() || clean == targetPc) return
+        val oldPc = targetPc
+        targetPc = clean
+        topicStatus = "ghost_lock/$targetPc/status"
+        topicCmd = "ghost_lock/$targetPc/cmd"
+        topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
+        topicStreamCmd = "ghost_lock/$targetPc/phone_stream/cmd"
+
+        updateNotification("Surveillance active 24/7", "Connecté à $targetPc")
+
+        Thread {
+            try {
+                mqttClient?.let { client ->
+                    if (client.isConnected) {
+                        try {
+                            client.unsubscribe("ghost_lock/$oldPc/status")
+                            client.unsubscribe("ghost_lock/$oldPc/cmd")
+                            client.unsubscribe("ghost_lock/$oldPc/phone_stream/cmd")
+                        } catch (e: Exception) {}
+
+                        client.subscribe(topicStatus, 1)
+                        client.subscribe(topicCmd, 1)
+                        client.subscribe(topicStreamCmd, 1)
+
+                        val json = JSONObject().apply {
+                            put("action", "heartbeat")
+                            put("device", "redmi_a3")
+                            put("service", true)
+                            put("timestamp", System.currentTimeMillis())
+                        }
+                        client.publish(topicHeartbeat, MqttMessage(json.toString().toByteArray()).apply { qos = 0 })
+                    }
+                }
+            } catch (e: Exception) {}
+        }.start()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
         if (action == "STOP") {
             stopSelf()
             return START_NOT_STICKY
+        }
+
+        if (action == "ACTION_CHANGE_TARGET_PC") {
+            val newPc = intent.getStringExtra("target_pc") ?: GhostPrefs.getSelectedPc(this)
+            switchTargetPc(newPc)
+            return START_STICKY
         }
 
         // Vérification et relance du beacon si éteint
