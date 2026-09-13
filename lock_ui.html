@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostLock Shield</title>
+    <title>GhostLock Shield • visionOS Spatial</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --mouse-x: 50vw;
+            --mouse-y: 50vh;
+            --glass-bg: rgba(15, 23, 42, 0.58);
+            --glass-border: rgba(255, 255, 255, 0.22);
+            --glass-specular: rgba(255, 255, 255, 0.45);
+            --color-iris: #38bdf8;
+            --color-emerald: #10b981;
+            --color-rose: #f43f5e;
+            --color-indigo: #818cf8;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -19,7 +31,7 @@
         }
 
         html, body {
-            background-color: #05060b;
+            background-color: #030408;
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
             height: 100vh;
             width: 100vw;
@@ -28,13 +40,14 @@
             color: #ffffff;
             -webkit-app-region: no-drag !important;
             cursor: default;
+            perspective: 1200px;
         }
 
         /* ==================================================================== */
-        /* CALQUES DE FOND (TOUS EN POSITION FIXED POUR UN CENTRAGE ABSOLU)    */
+        /* CALQUES DE FOND SPATIAUX (IMMERSION OPTIQUE APPLE VISION PRO)        */
         /* ==================================================================== */
 
-        /* 1. Capture d'écran du vrai bureau Windows */
+        /* 1. Vrai bureau Windows capturé avec flou gaussien optique progressif */
         #realDesktopBg {
             position: fixed;
             top: 0;
@@ -47,27 +60,26 @@
             background-repeat: no-repeat;
             z-index: 1;
             pointer-events: none;
-            /* État par défaut flouté */
-            filter: blur(35px) brightness(0.35) saturate(1.3);
-            transform: scale(1.03);
-            transition: filter 2.4s cubic-bezier(0.16, 1, 0.3, 1), transform 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: blur(42px) brightness(0.28) saturate(1.4);
+            transform: scale(1.04);
+            transition: filter 2.5s cubic-bezier(0.16, 1, 0.3, 1), transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* 2. Voile sombre dégradé d'ambiance */
+        /* 2. Voile sombre spatial visionOS avec dégradé radial immersif */
         #darkDimmer {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: radial-gradient(circle at 50% 50%, rgba(10, 15, 30, 0.45) 0%, rgba(3, 5, 12, 0.8) 100%);
+            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(18, 24, 48, 0.35) 0%, rgba(3, 5, 12, 0.85) 65%, rgba(2, 3, 7, 0.95) 100%);
             z-index: 2;
             pointer-events: none;
             opacity: 1;
             transition: opacity 2.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* 3. Toile des particules flottantes */
+        /* 3. Toile des poussières d'étoiles spatiales (Particules 60 FPS) */
         #bgCanvas {
             position: fixed;
             top: 0;
@@ -77,34 +89,34 @@
             z-index: 3;
             pointer-events: none;
             opacity: 1;
-            transition: opacity 1.6s ease;
+            transition: opacity 1.8s ease;
         }
 
-        /* 4. Halo lumineux ambiant central */
+        /* 4. Halo lumineux ambiant central respirant */
         .ambient-glow {
             position: fixed;
             top: 50%;
             left: 50%;
-            width: 650px;
-            height: 650px;
+            width: 750px;
+            height: 750px;
             transform: translate(-50%, -50%);
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(56, 189, 248, 0.1) 45%, transparent 70%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(56, 189, 248, 0.08) 45%, transparent 70%);
             border-radius: 50%;
             z-index: 4;
             pointer-events: none;
-            filter: blur(50px);
-            opacity: 0.85;
-            animation: ambientPulse 4s ease-in-out infinite alternate;
+            filter: blur(70px);
+            opacity: 0.9;
+            animation: ambientBreathe 5s ease-in-out infinite alternate;
             transition: opacity 1.5s ease;
         }
 
-        @keyframes ambientPulse {
-            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.65; }
-            100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.95; }
+        @keyframes ambientBreathe {
+            0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1.18); opacity: 0.95; }
         }
 
         /* ==================================================================== */
-        /* ÉTATS DU CYCLE DE VIE (MACHINE À ÉTATS DU CORPS)                     */
+        /* MACHINE À ÉTATS DU CORPS (TRANSITIONS CINÉMATIQUES)                  */
         /* ==================================================================== */
 
         /* 1. ÉTAT DE PRÉPARATION (Bureau 100% net au départ, aucun saut visuel) */
@@ -121,15 +133,15 @@
             transition: none !important;
         }
 
-        body.lock-prep .lock-container {
+        body.lock-prep .spatial-card-wrapper {
             opacity: 0 !important;
-            transform: translate(-50%, calc(-50% + 28px)) scale(0.88) !important;
-            filter: blur(20px) !important;
+            transform: translate(-50%, calc(-50% + 40px)) scale(0.85) !important;
+            filter: blur(25px) !important;
             transition: none !important;
         }
 
         body.lock-prep #shackleGroup {
-            transform: translateY(-9px) rotate(-34deg) !important;
+            transform: translateY(-11px) rotate(-34deg) !important;
             animation: none !important;
         }
 
@@ -143,8 +155,8 @@
 
         /* 2. CINÉMATIQUE LENTE DE FERMETURE / VERROUILLAGE (~2.5s) */
         body.locking #realDesktopBg {
-            filter: blur(35px) brightness(0.35) saturate(1.3) !important;
-            transform: scale(1.03) !important;
+            filter: blur(42px) brightness(0.28) saturate(1.4) !important;
+            transform: scale(1.04) !important;
             transition: filter 2.5s cubic-bezier(0.16, 1, 0.3, 1), transform 2.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
@@ -159,12 +171,12 @@
         }
 
         body.locking .ambient-glow {
-            opacity: 0.85 !important;
+            opacity: 0.9 !important;
             transform: translate(-50%, -50%) scale(1.0) !important;
             transition: opacity 2.0s ease, transform 2.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
-        body.locking .lock-container {
+        body.locking .spatial-card-wrapper {
             opacity: 1 !important;
             transform: translate(-50%, -50%) scale(1.0) !important;
             filter: blur(0px) !important;
@@ -173,26 +185,16 @@
                         filter 1.8s ease 0.3s !important;
         }
 
-        /* 3. ÉTAT VERROUILLÉ PERMANENT (NE DISPARAÎT JAMAIS TANT QUE NON DÉVERROUILLÉ) */
+        /* 3. ÉTAT VERROUILLÉ PERMANENT */
         body.locked #realDesktopBg {
-            filter: blur(35px) brightness(0.35) saturate(1.3);
-            transform: scale(1.03);
+            filter: blur(42px) brightness(0.28) saturate(1.4);
+            transform: scale(1.04);
         }
 
-        body.locked #darkDimmer {
-            opacity: 1;
-        }
-
-        body.locked #bgCanvas {
-            opacity: 1;
-        }
-
-        body.locked .ambient-glow {
-            opacity: 0.85;
-            transform: translate(-50%, -50%) scale(1.0);
-        }
-
-        body.locked .lock-container {
+        body.locked #darkDimmer { opacity: 1; }
+        body.locked #bgCanvas { opacity: 1; }
+        body.locked .ambient-glow { opacity: 0.9; transform: translate(-50%, -50%) scale(1.0); }
+        body.locked .spatial-card-wrapper {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1.0);
             filter: blur(0px);
@@ -225,16 +227,42 @@
             transition: opacity 1.2s ease !important;
         }
 
-        body.unlocking .lock-container {
+        body.unlocking .spatial-card-wrapper {
             opacity: 0 !important;
             visibility: hidden !important;
             pointer-events: none !important;
         }
 
         /* ==================================================================== */
-        /* ONDES DE CHOC CENTRALES                                              */
+        /* ONDES DE CHOC SPATIALES & PRISMATIQUES                               */
         /* ==================================================================== */
         .unlock-shockwave {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 140px;
+            height: 140px;
+            margin-top: -70px;
+            margin-left: -70px;
+            border-radius: 50%;
+            border: 2px solid #34d399;
+            box-shadow: 0 0 60px rgba(16, 185, 129, 0.95), inset 0 0 35px rgba(52, 211, 153, 0.65);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+
+        .unlock-shockwave.active {
+            animation: shockwaveBoom 1.45s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
+        }
+
+        @keyframes shockwaveBoom {
+            0% { transform: scale(0.6); opacity: 1; border-width: 5px; }
+            45% { opacity: 0.9; border-color: #38bdf8; box-shadow: 0 0 80px rgba(56, 189, 248, 0.85); }
+            100% { transform: scale(28); opacity: 0; border-width: 1px; }
+        }
+
+        .locking-wave {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -243,258 +271,350 @@
             margin-top: -60px;
             margin-left: -60px;
             border-radius: 50%;
-            border: 3px solid #34d399;
-            box-shadow: 0 0 50px rgba(16, 185, 129, 0.9), inset 0 0 30px rgba(52, 211, 153, 0.6);
-            pointer-events: none;
-            opacity: 0;
-            z-index: 50;
-        }
-
-        .unlock-shockwave.active {
-            animation: shockwaveBoom 1.4s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
-        }
-
-        @keyframes shockwaveBoom {
-            0% { transform: scale(0.6); opacity: 1; border-width: 5px; }
-            40% { opacity: 0.85; border-color: #38bdf8; box-shadow: 0 0 70px rgba(56, 189, 248, 0.8); }
-            100% { transform: scale(26); opacity: 0; border-width: 1px; }
-        }
-
-        .locking-wave {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 110px;
-            height: 110px;
-            margin-top: -55px;
-            margin-left: -55px;
-            border-radius: 50%;
-            border: 3px solid #818cf8;
-            box-shadow: 0 0 40px rgba(99, 102, 241, 0.85), inset 0 0 15px rgba(129, 140, 248, 0.5);
+            border: 2px solid #818cf8;
+            box-shadow: 0 0 45px rgba(99, 102, 241, 0.85), inset 0 0 20px rgba(129, 140, 248, 0.5);
             pointer-events: none;
             opacity: 0;
             z-index: 45;
         }
 
         .locking-wave.pulse {
-            animation: lockWavePulse 1.2s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
+            animation: lockWavePulse 1.25s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
         }
 
         @keyframes lockWavePulse {
             0% { transform: scale(0.6); opacity: 1; border-width: 4px; border-color: #818cf8; }
-            50% { opacity: 0.75; border-color: #38bdf8; box-shadow: 0 0 60px rgba(56, 189, 248, 0.7); }
-            100% { transform: scale(7.5); opacity: 0; border-width: 1px; }
+            50% { opacity: 0.75; border-color: #38bdf8; box-shadow: 0 0 65px rgba(56, 189, 248, 0.7); }
+            100% { transform: scale(9); opacity: 0; border-width: 1px; }
         }
 
         /* ==================================================================== */
-        /* CONTENEUR DU VERROU (MATHÉMATIQUEMENT CENTRÉ EN TOUTES CIRCONSTANCES) */
+        /* PLAQUE DE VERRE SPATIAL VISIONOS (CENTRAL FLOATING GLASS PLATE)      */
         /* ==================================================================== */
-        .lock-container {
+        .spatial-card-wrapper {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 20;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transform-style: preserve-3d;
+            transition: transform 0.15s ease-out;
+        }
+
+        .vision-spatial-plate {
+            position: relative;
+            display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             width: 90vw;
-            max-width: 580px;
-            padding: 40px;
-            pointer-events: auto;
-            opacity: 1;
-            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
-                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
-                        filter 0.8s ease;
+            max-width: 540px;
+            padding: 48px 52px 38px 52px;
+            border-radius: 40px;
+            background: radial-gradient(130% 120% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 50%, rgba(15, 23, 42, 0.65) 100%), rgba(8, 12, 26, 0.55);
+            backdrop-filter: blur(55px) saturate(210%);
+            -webkit-backdrop-filter: blur(55px) saturate(210%);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 
+                0 35px 90px -10px rgba(0, 0, 0, 0.75),
+                0 0 70px rgba(99, 102, 241, 0.15),
+                inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.48),
+                inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.55);
+            overflow: hidden;
+            transition: box-shadow 0.4s ease, border-color 0.4s ease;
         }
 
-        /* Radar & Cadenas Biométrique */
-        .shield-radar {
+        /* Lueur spéculaire prismatique dynamique suivant la souris */
+        .vision-spatial-plate::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 40px;
+            background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.12), transparent 80%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* ==================================================================== */
+        /* ORBE BIOMÉTRIQUE & RADAR ORBITAL 3D                                  */
+        /* ==================================================================== */
+        .biometric-spatial-gyro {
             position: relative;
-            width: 220px;
-            height: 220px;
+            width: 170px;
+            height: 170px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
+            perspective: 800px;
         }
 
-        .radar-ring {
+        /* Anneaux orbitaux gyroscopiques visionOS */
+        .gyro-ring {
             position: absolute;
             border-radius: 50%;
-            border: 1.5px solid rgba(99, 102, 241, 0.35);
-            animation: radarPulse 3s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
-            transition: opacity 0.5s ease;
+            pointer-events: none;
         }
 
-        .radar-ring:nth-child(1) { width: 140px; height: 140px; animation-delay: 0s; }
-        .radar-ring:nth-child(2) { width: 180px; height: 180px; animation-delay: 1s; border-color: rgba(56, 189, 248, 0.25); }
-        .radar-ring:nth-child(3) { width: 220px; height: 220px; animation-delay: 2s; border-color: rgba(99, 102, 241, 0.15); }
-
-        @keyframes radarPulse {
-            0% { transform: scale(0.85); opacity: 0.8; box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); }
-            50% { opacity: 0.4; box-shadow: 0 0 25px rgba(56, 189, 248, 0.3); }
-            100% { transform: scale(1.15); opacity: 0; }
+        .gyro-ring-1 {
+            width: 170px;
+            height: 170px;
+            border: 1px dashed rgba(129, 140, 248, 0.35);
+            animation: ringRotate3D1 18s linear infinite;
         }
 
-        /* Hub central Cadenas */
+        .gyro-ring-2 {
+            width: 145px;
+            height: 145px;
+            border: 1.5px solid rgba(56, 189, 248, 0.25);
+            border-top-color: rgba(56, 189, 248, 0.85);
+            border-bottom-color: rgba(129, 140, 248, 0.8);
+            animation: ringRotate3D2 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .gyro-ring-3 {
+            width: 122px;
+            height: 122px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            animation: ringPulseSmooth 3.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes ringRotate3D1 {
+            0% { transform: rotateZ(0deg) rotateX(25deg); }
+            100% { transform: rotateZ(360deg) rotateX(25deg); }
+        }
+
+        @keyframes ringRotate3D2 {
+            0% { transform: rotateZ(360deg) rotateY(30deg); }
+            100% { transform: rotateZ(0deg) rotateY(30deg); }
+        }
+
+        @keyframes ringPulseSmooth {
+            0% { transform: scale(0.96); opacity: 0.4; box-shadow: 0 0 10px rgba(99, 102, 241, 0.1); }
+            100% { transform: scale(1.05); opacity: 0.85; box-shadow: 0 0 25px rgba(56, 189, 248, 0.35); }
+        }
+
+        /* Hub central Cadenas (Disque de Verre Spéculaire) */
         .lock-hub {
             position: relative;
-            width: 110px;
-            height: 110px;
+            width: 96px;
+            height: 96px;
             border-radius: 50%;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 2px solid rgba(99, 102, 241, 0.5);
-            box-shadow: 0 0 35px rgba(99, 102, 241, 0.3), inset 0 0 15px rgba(99, 102, 241, 0.2);
+            background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.2) 0%, rgba(30, 41, 59, 0.85) 60%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.55),
+                0 0 30px rgba(99, 102, 241, 0.35),
+                inset 0 1.5px 2px rgba(255, 255, 255, 0.65),
+                inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: visible;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+            transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .lock-hub:hover {
-            transform: scale(1.06);
-            border-color: rgba(129, 140, 248, 0.9);
-            box-shadow: 0 0 50px rgba(99, 102, 241, 0.6), inset 0 0 20px rgba(129, 140, 248, 0.4);
+            transform: scale(1.08);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 
+                0 20px 45px rgba(0, 0, 0, 0.6),
+                0 0 45px rgba(129, 140, 248, 0.6),
+                inset 0 2px 3px rgba(255, 255, 255, 0.8);
         }
 
         .lock-hub.unlocked {
-            border-color: #10b981;
-            box-shadow: 0 0 70px rgba(16, 185, 129, 0.85), 0 0 120px rgba(52, 211, 153, 0.45), inset 0 0 25px rgba(16, 185, 129, 0.5);
-            background: linear-gradient(135deg, rgba(6, 78, 59, 0.9) 0%, rgba(2, 44, 34, 0.98) 100%);
-            transform: scale(1.08);
+            border-color: #34d399;
+            background: radial-gradient(circle at 35% 30%, rgba(52, 211, 153, 0.45) 0%, rgba(6, 78, 59, 0.9) 70%, rgba(2, 44, 34, 0.98) 100%);
+            box-shadow: 
+                0 20px 60px rgba(16, 185, 129, 0.7),
+                0 0 90px rgba(52, 211, 153, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.8);
+            transform: scale(1.1);
         }
 
-        /* Laser de scan */
+        /* Laser optique de scan biométrique (Optic ID Sweep) */
         .scan-laser {
             position: absolute;
             top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #38bdf8, #818cf8, transparent);
-            box-shadow: 0 0 12px #38bdf8;
-            opacity: 0.85;
-            animation: laserScan 2.4s ease-in-out infinite alternate;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #38bdf8 40%, #ffffff 50%, #818cf8 60%, transparent);
+            box-shadow: 0 0 14px #38bdf8, 0 0 24px rgba(99, 102, 241, 0.6);
+            opacity: 0.9;
+            animation: laserScanOptic 2.6s ease-in-out infinite alternate;
             pointer-events: none;
             border-radius: 50%;
         }
 
-        @keyframes laserScan {
-            0% { top: 15%; opacity: 0.3; }
+        @keyframes laserScanOptic {
+            0% { top: 18%; opacity: 0.25; }
             50% { opacity: 1; }
-            100% { top: 85%; opacity: 0.3; }
+            100% { top: 82%; opacity: 0.25; }
         }
 
-        /* SVG Cadenas */
+        /* SVG Cadenas Haute Précision Style Apple */
         .svg-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             fill: none;
-            stroke: #818cf8;
-            stroke-width: 2;
+            stroke: #e0e7ff;
+            stroke-width: 1.8;
             stroke-linecap: round;
             stroke-linejoin: round;
             transition: stroke 0.4s ease, filter 0.4s ease;
-            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.6));
+            filter: drop-shadow(0 0 10px rgba(129, 140, 248, 0.75));
             overflow: visible;
         }
 
         .unlocked .svg-icon {
             stroke: #34d399;
-            filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.95));
+            filter: drop-shadow(0 0 18px rgba(16, 185, 129, 0.95));
         }
 
-        /* Animation mécanique d'ouverture de l'anse */
+        /* Animation mécanique d'ouverture de l'anse avec ressort physique */
         #shackleGroup {
             transform-origin: 7px 11px;
-            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .unlocked #shackleGroup {
-            animation: shackleSpringPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: shackleSpringPop 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
         @keyframes shackleSpringPop {
             0% { transform: translateY(0) rotate(0deg); }
-            30% { transform: translateY(-8px) rotate(0deg); }
-            60% { transform: translateY(-10px) rotate(-14deg); }
-            100% { transform: translateY(-9px) rotate(-34deg); }
+            30% { transform: translateY(-10px) rotate(0deg); }
+            60% { transform: translateY(-12px) rotate(-16deg); }
+            100% { transform: translateY(-11px) rotate(-34deg); }
         }
 
-        /* Animation mécanique de verrouillage / fermeture de l'anse */
         .locking-snap #shackleGroup {
             animation: shackleLockSnap 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.25) forwards !important;
         }
 
         @keyframes shackleLockSnap {
-            0% { transform: translateY(-9px) rotate(-34deg); }
-            40% { transform: translateY(-9px) rotate(0deg); }
-            70% { transform: translateY(3px) rotate(0deg); }
+            0% { transform: translateY(-11px) rotate(-34deg); }
+            45% { transform: translateY(-11px) rotate(0deg); }
+            75% { transform: translateY(3px) rotate(0deg); }
             100% { transform: translateY(0) rotate(0deg); }
         }
 
-        /* Textes */
+        /* ==================================================================== */
+        /* TYPOGRAPHIE ET BADGES SPATIAUX                                       */
+        /* ==================================================================== */
         .title {
-            font-size: 32px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #ffffff 40%, #c7d2fe 100%);
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            background: linear-gradient(180deg, #ffffff 20%, #cbd5e1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.4));
         }
 
         .subtitle {
-            font-size: 15px;
+            font-size: 14px;
             color: #94a3b8;
-            font-weight: 500;
-            margin-bottom: 28px;
-            line-height: 1.5;
+            font-weight: 400;
+            margin-bottom: 24px;
+            line-height: 1.55;
+            letter-spacing: 0.02em;
         }
 
-        /* Badge Clé Numérique */
+        /* Pilule de statut Clé Numérique (Apple Pill Badge) */
         .key-badge {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: rgba(30, 36, 56, 0.65);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(99, 102, 241, 0.35);
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 999px;
-            padding: 8px 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            padding: 8px 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .key-badge:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
         }
 
         .key-badge-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background-color: #38bdf8;
-            box-shadow: 0 0 10px #38bdf8;
+            box-shadow: 0 0 12px #38bdf8;
             animation: dotBlink 1.8s ease-in-out infinite;
         }
 
         @keyframes dotBlink {
-            0%, 100% { opacity: 0.4; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
+            0%, 100% { opacity: 0.4; transform: scale(0.85); }
+            50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 16px #38bdf8; }
         }
 
         .key-badge-text {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            color: #e0e7ff;
-            letter-spacing: 0.3px;
+            color: #f1f5f9;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Pilule discrète Code de secours */
+        .pin-trigger-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .pin-trigger-pill:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(129, 140, 248, 0.5);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
+        }
+
+        .pin-pill-key {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #a5b4fc;
+            letter-spacing: 0.5px;
         }
 
         .footer-hint {
+            margin-top: 14px;
             font-size: 12px;
-            font-style: italic;
             color: #64748b;
             display: flex;
             align-items: center;
@@ -511,12 +631,12 @@
 
         @keyframes dotPulse {
             0% { transform: scale(0.9); opacity: 0.5; }
-            50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 8px #f43f5e; }
+            50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 10px #f43f5e; }
             100% { transform: scale(0.9); opacity: 0.5; }
         }
 
         /* ==================================================================== */
-        /* CINÉMATIQUE APPLE VISION PRO : "BIENVENUE" (SOYEUX, SANS AUCUN POP)  */
+        /* CINÉMATIQUE APPLE VISION PRO : "BIENVENUE" (SPATIAL FLOATING STAGE)  */
         /* ==================================================================== */
         .apple-vision-stage {
             position: fixed;
@@ -537,36 +657,33 @@
                         visibility 1.4s;
         }
 
-        /* Apparition lente et somptueuse */
         .apple-vision-stage.stage-visible {
             opacity: 1 !important;
             visibility: visible !important;
             transform: scale(1.0) !important;
         }
 
-        /* Dissolution ultra-douce */
         .apple-vision-stage.stage-dissolving {
             opacity: 0 !important;
             visibility: hidden !important;
             transform: scale(1.08) !important;
-            filter: blur(14px) !important;
+            filter: blur(16px) !important;
             transition: opacity 1.3s cubic-bezier(0.16, 1, 0.3, 1), 
                         transform 1.3s cubic-bezier(0.16, 1, 0.3, 1), 
                         filter 1.3s ease, 
                         visibility 1.3s !important;
         }
 
-        /* Carte visionOS en verre spatial */
         .vision-glass-card {
             position: relative;
             padding: 56px 84px;
-            border-radius: 42px;
-            background: radial-gradient(130% 130% at 50% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 65%, rgba(255, 255, 255, 0.02) 100%), rgba(11, 16, 32, 0.65);
-            backdrop-filter: blur(50px) saturate(220%);
-            -webkit-backdrop-filter: blur(50px) saturate(220%);
+            border-radius: 44px;
+            background: radial-gradient(130% 130% at 50% 0%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 60%, rgba(255, 255, 255, 0.02) 100%), rgba(11, 16, 32, 0.65);
+            backdrop-filter: blur(55px) saturate(220%);
+            -webkit-backdrop-filter: blur(55px) saturate(220%);
             border: 1px solid rgba(255, 255, 255, 0.28);
             box-shadow: 
-                0 40px 100px rgba(0, 0, 0, 0.65),
+                0 40px 100px rgba(0, 0, 0, 0.7),
                 0 0 120px rgba(99, 102, 241, 0.3),
                 inset 0 1.5px 2px rgba(255, 255, 255, 0.6),
                 inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
@@ -584,7 +701,7 @@
             padding: 6px 18px;
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.24);
             font-size: 11px;
             font-weight: 600;
             letter-spacing: 0.18em;
@@ -650,7 +767,7 @@
         }
 
         /* ==================================================================== */
-        /* MODAL CODE PIN SECRÈTE AVEC ANIMATION SPATIALE APPLE VISION PRO     */
+        /* MODAL CODE PIN SECRÈTE (VISIONOS SPATIAL DIALOG)                     */
         /* ==================================================================== */
         .pin-modal-overlay {
             position: fixed;
@@ -658,7 +775,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(3, 6, 16, 0);
+            background: rgba(2, 4, 10, 0);
             backdrop-filter: blur(0px);
             -webkit-backdrop-filter: blur(0px);
             z-index: 100;
@@ -668,91 +785,60 @@
             opacity: 0;
             pointer-events: none;
             perspective: 1200px;
-            transition: opacity 0.4s ease, backdrop-filter 0.4s ease, background 0.4s ease;
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.45s ease, background 0.45s ease;
         }
 
         .pin-modal-overlay.active {
             opacity: 1;
             pointer-events: all;
-            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.16) 0%, rgba(4, 7, 18, 0.82) 75%);
-            backdrop-filter: blur(35px) saturate(180%);
-            -webkit-backdrop-filter: blur(35px) saturate(180%);
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.16) 0%, rgba(2, 4, 10, 0.86) 75%);
+            backdrop-filter: blur(40px) saturate(190%);
+            -webkit-backdrop-filter: blur(40px) saturate(190%);
         }
 
         .pin-card {
             position: relative;
-            background: rgba(15, 22, 38, 0.88);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(99, 102, 241, 0.3);
-            border-radius: 30px;
-            padding: 30px 36px 26px 36px;
+            background: radial-gradient(130% 120% at 50% 0%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 60%, rgba(15, 23, 42, 0.8) 100%), rgba(8, 12, 24, 0.7);
+            backdrop-filter: blur(50px) saturate(200%);
+            -webkit-backdrop-filter: blur(50px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 
+                0 35px 85px rgba(0, 0, 0, 0.85),
+                0 0 60px rgba(99, 102, 241, 0.25),
+                inset 0 1.5px 2px rgba(255, 255, 255, 0.55),
+                inset 0 -1.5px 2px rgba(0, 0, 0, 0.5);
+            border-radius: 36px;
+            padding: 34px 38px 28px 38px;
             text-align: center;
-            max-width: 380px;
+            max-width: 390px;
             width: 90%;
             transform: translateY(60px) scale(0.85) rotateX(15deg);
             opacity: 0;
             filter: blur(14px);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease, filter 0.35s ease;
             user-select: none;
             overflow: hidden;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, filter 0.4s ease;
         }
 
-        /* Contour lumineux holographique animé */
-        .pin-card::before {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border-radius: 30px;
-            padding: 1.5px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(129, 140, 248, 0.65) 40%, rgba(56, 189, 248, 0.75) 70%, rgba(168, 85, 247, 0.4) 100%);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-            opacity: 0.85;
-            animation: borderAuroraGlow 5s ease-in-out infinite alternate;
-        }
-
-        @keyframes borderAuroraGlow {
-            0% { filter: hue-rotate(0deg) drop-shadow(0 0 8px rgba(99, 102, 241, 0.6)); }
-            100% { filter: hue-rotate(45deg) drop-shadow(0 0 16px rgba(56, 189, 248, 0.8)); }
-        }
-
-        /* Cinématique d'apparition spatiale spectaculaire */
         .pin-modal-overlay.active .pin-card {
-            animation: pinCardSpatialEntrance 0.58s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0deg);
+            filter: blur(0px);
+            animation: pinCardSpringIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes pinCardSpatialEntrance {
-            0% {
-                opacity: 0;
-                transform: translateY(70px) scale(0.8) rotateX(18deg);
-                filter: blur(18px);
-            }
-            60% {
-                opacity: 0.95;
-                filter: blur(2px);
-            }
-            80% {
-                transform: translateY(-8px) scale(1.025) rotateX(-2deg);
-                filter: blur(0px);
-                box-shadow: 0 40px 90px rgba(0, 0, 0, 0.85), 0 0 70px rgba(129, 140, 248, 0.5);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1) rotateX(0deg);
-                filter: blur(0px);
-                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 45px rgba(99, 102, 241, 0.3);
-            }
+        @keyframes pinCardSpringIn {
+            0% { opacity: 0; transform: translateY(70px) scale(0.8) rotateX(18deg); filter: blur(16px); }
+            65% { opacity: 0.95; filter: blur(1px); }
+            82% { transform: translateY(-7px) scale(1.02) rotateX(-2deg); }
+            100% { opacity: 1; transform: translateY(0) scale(1) rotateX(0deg); filter: blur(0px); }
         }
 
         .pin-header-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .pin-iris-badge {
@@ -796,213 +882,105 @@
             justify-content: center;
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: all 0.25s ease;
             outline: none;
         }
 
         .pin-close-btn:hover {
-            background: rgba(244, 63, 94, 0.25);
-            border-color: rgba(244, 63, 94, 0.6);
-            color: #f43f5e;
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
             transform: scale(1.1);
         }
 
         .pin-title {
-            font-size: 21px;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-            background: linear-gradient(135deg, #ffffff 30%, #c7d2fe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 2px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 0.02em;
+            margin-top: 4px;
         }
 
         .pin-subtitle {
             font-size: 13px;
             color: #94a3b8;
-            margin-bottom: 18px;
+            margin-bottom: 24px;
+            font-weight: 400;
         }
 
+        /* 4 Cercles de PIN visionOS avec halo liquide */
         .pin-dots-row {
             display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 16px;
-            margin-bottom: 22px;
+            gap: 18px;
+            margin-bottom: 28px;
         }
 
         .pin-dot {
-            width: 17px;
-            height: 17px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            border: 2px solid rgba(99, 102, 241, 0.4);
-            background: rgba(15, 23, 42, 0.7);
-            box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .pin-dot.filled {
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            border-color: #a5b4fc;
-            box-shadow: 0 0 16px #818cf8, 0 0 28px rgba(56, 189, 248, 0.6);
-            transform: scale(1.2);
-            animation: dotFillPulse 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            border-color: #818cf8;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.85);
+            transform: scale(1.22);
         }
 
-        @keyframes dotFillPulse {
-            0% { transform: scale(0.6); opacity: 0.5; }
-            50% { transform: scale(1.35); }
-            100% { transform: scale(1.2); opacity: 1; }
-        }
-
-        .pin-dot.error {
-            background: #f43f5e !important;
-            border-color: #fda4af !important;
-            box-shadow: 0 0 18px #f43f5e !important;
-            transform: scale(1.1);
-        }
-
-        .pin-dot.success {
-            background: #10b981 !important;
-            border-color: #6ee7b7 !important;
-            box-shadow: 0 0 18px #10b981 !important;
-            transform: scale(1.25);
-        }
-
-        /* Pavé numérique tactile & clic souris */
+        /* Pavé numérique tactile & clic en disques de verre visionOS */
         .pin-keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            max-width: 250px;
-            margin: 0 auto 16px auto;
+            gap: 14px;
+            max-width: 270px;
+            margin: 0 auto 20px auto;
         }
 
         .pin-key {
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
             background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.13);
-            color: #f1f5f9;
-            font-size: 20px;
-            font-weight: 600;
-            font-family: inherit;
-            height: 48px;
-            border-radius: 14px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             outline: none;
-            transition: all 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Animation d'apparition en cascade des touches */
-        .pin-modal-overlay.active .pin-key {
-            animation: keyItemPop 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
-        }
-        .pin-modal-overlay.active .pin-key:nth-child(1) { animation-delay: 0.06s; }
-        .pin-modal-overlay.active .pin-key:nth-child(2) { animation-delay: 0.08s; }
-        .pin-modal-overlay.active .pin-key:nth-child(3) { animation-delay: 0.10s; }
-        .pin-modal-overlay.active .pin-key:nth-child(4) { animation-delay: 0.12s; }
-        .pin-modal-overlay.active .pin-key:nth-child(5) { animation-delay: 0.14s; }
-        .pin-modal-overlay.active .pin-key:nth-child(6) { animation-delay: 0.16s; }
-        .pin-modal-overlay.active .pin-key:nth-child(7) { animation-delay: 0.18s; }
-        .pin-modal-overlay.active .pin-key:nth-child(8) { animation-delay: 0.20s; }
-        .pin-modal-overlay.active .pin-key:nth-child(9) { animation-delay: 0.22s; }
-        .pin-modal-overlay.active .pin-key:nth-child(10) { animation-delay: 0.24s; }
-        .pin-modal-overlay.active .pin-key:nth-child(11) { animation-delay: 0.26s; }
-        .pin-modal-overlay.active .pin-key:nth-child(12) { animation-delay: 0.28s; }
-
-        @keyframes keyItemPop {
-            0% { opacity: 0; transform: translateY(14px) scale(0.85); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2);
         }
 
         .pin-key:hover {
-            background: rgba(99, 102, 241, 0.28);
-            border-color: rgba(129, 140, 248, 0.65);
-            transform: translateY(-2px) scale(1.03);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
-            color: #ffffff;
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
         }
 
         .pin-key:active {
-            transform: translateY(1px) scale(0.94);
-            background: rgba(99, 102, 241, 0.45);
+            transform: scale(0.92);
+            background: rgba(99, 102, 241, 0.35);
         }
 
-        .pin-key.action-clear {
-            font-size: 15px;
-            color: #f43f5e;
-            border-color: rgba(244, 63, 94, 0.3);
-            background: rgba(244, 63, 94, 0.08);
-        }
-
-        .pin-key.action-clear:hover {
-            background: rgba(244, 63, 94, 0.25);
-            border-color: #f43f5e;
-            box-shadow: 0 6px 16px rgba(244, 63, 94, 0.3);
-            color: #ffffff;
-        }
-
+        .pin-key.action-clear,
         .pin-key.action-back {
-            font-size: 18px;
-            color: #f59e0b;
-            border-color: rgba(245, 158, 11, 0.3);
-            background: rgba(245, 158, 11, 0.08);
-        }
-
-        .pin-key.action-back:hover {
-            background: rgba(245, 158, 11, 0.25);
-            border-color: #f59e0b;
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
-            color: #ffffff;
+            font-size: 16px;
+            color: #94a3b8;
         }
 
         .pin-hint {
             font-size: 11px;
             color: #64748b;
-            font-family: 'JetBrains Mono', monospace;
-            line-height: 1.5;
-        }
-
-        /* Bouton déclencheur discret sur l'écran d'accueil */
-        .pin-trigger-pill {
-            margin-top: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.13);
-            backdrop-filter: blur(12px);
-            padding: 7px 16px;
-            border-radius: 9999px;
-            color: #cbd5e1;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-            outline: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-        }
-
-        .pin-trigger-pill:hover {
-            background: rgba(99, 102, 241, 0.22);
-            border-color: rgba(129, 140, 248, 0.55);
-            color: #ffffff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-        }
-
-        .pin-pill-key {
-            background: rgba(0, 0, 0, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 6px;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            color: #818cf8;
-            letter-spacing: 0.5px;
         }
 
         @keyframes shakeCard {
@@ -1022,61 +1000,62 @@
     <div id="realDesktopBg"></div>
     <!-- 2. Voile sombre d'ambiance visionOS -->
     <div id="darkDimmer"></div>
-    <!-- 3. Particules & halos -->
+    <!-- 3. Toile des particules cosmiques 60 FPS -->
     <canvas id="bgCanvas"></canvas>
     <div class="ambient-glow"></div>
 
-    <!-- Onde de choc spatiale au déverrouillage -->
+    <!-- Ondes de choc spectrales -->
     <div class="unlock-shockwave" id="unlockShockwave"></div>
-    <!-- Onde de choc au verrouillage -->
     <div class="locking-wave" id="lockingWave"></div>
 
-    <!-- Conteneur Principal du Verrou (Centré à 100%) -->
-    <div class="lock-container" id="mainContainer">
-        
-        <!-- Radar & Hub Central -->
-        <div class="shield-radar">
-            <div class="radar-ring"></div>
-            <div class="radar-ring"></div>
-            <div class="radar-ring"></div>
+    <!-- Conteneur Spatial du Verrou (Centrage absolu + Parallaxe 3D) -->
+    <div class="spatial-card-wrapper" id="spatialWrapper">
+        <div class="vision-spatial-plate" id="mainContainer">
             
-            <div class="lock-hub" id="lockHub" onclick="togglePinModal()" title="Cliquer pour saisir le code PIN de secours (Échap)">
-                <div class="scan-laser" id="scanLaser"></div>
+            <!-- Gyroscope Biométrique 3D -->
+            <div class="biometric-spatial-gyro">
+                <div class="gyro-ring gyro-ring-1"></div>
+                <div class="gyro-ring gyro-ring-2"></div>
+                <div class="gyro-ring gyro-ring-3"></div>
                 
-                <!-- SVG Cadenas Haute Définition avec Anse Mécanique Dynamique -->
-                <svg class="svg-icon" id="lockSvg" viewBox="0 0 24 24">
-                    <g id="shackleGroup">
-                        <path id="shacklePath" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </g>
-                    <rect id="lockBody" x="3" y="11" width="18" height="11" rx="2.5" ry="2.5"></rect>
-                    <circle cx="12" cy="16.5" r="1.6" fill="#818cf8"></circle>
-                    <path d="M12 17.5v2" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
+                <div class="lock-hub" id="lockHub" onclick="togglePinModal()" title="Cliquer pour saisir le code PIN de secours (Échap)">
+                    <div class="scan-laser" id="scanLaser"></div>
+                    
+                    <!-- SVG Cadenas Haute Précision Style Apple -->
+                    <svg class="svg-icon" id="lockSvg" viewBox="0 0 24 24">
+                        <g id="shackleGroup">
+                            <path id="shacklePath" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </g>
+                        <rect id="lockBody" x="3" y="11" width="18" height="11" rx="2.5" ry="2.5"></rect>
+                        <circle cx="12" cy="16.5" r="1.6" fill="#818cf8"></circle>
+                        <path d="M12 17.5v2" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"></path>
+                    </svg>
+                </div>
             </div>
-        </div>
 
-        <!-- Titres & Textes -->
-        <div class="title" id="txtTitle">Accès PC Verrouillé</div>
-        <div class="subtitle" id="txtSubtitle">Vérification biométrique requise sur votre Redmi A3</div>
+            <!-- Titres & Textes épurés visionOS -->
+            <div class="title" id="txtTitle">Accès PC Verrouillé</div>
+            <div class="subtitle" id="txtSubtitle">Vérification biométrique requise sur votre Redmi A3</div>
 
-        <!-- Badge Téléphone -->
-        <div class="key-badge">
-            <div class="key-badge-dot"></div>
-            <span class="key-badge-text">📱 Clé Numérique : Redmi A3</span>
-        </div>
+            <!-- Badge Téléphone Clé Numérique -->
+            <div class="key-badge">
+                <div class="key-badge-dot"></div>
+                <span class="key-badge-text">📱 Clé Numérique • Redmi A3</span>
+            </div>
 
-        <!-- Bouton discret Code de secours -->
-        <div style="margin-top: 4px; margin-bottom: 8px;">
-            <button type="button" class="pin-trigger-pill" id="btnPinTrigger" onclick="togglePinModal()" title="Saisir le code PIN de secours (Touche Échap)">
-                <span style="font-size: 13px;">🔢</span>
-                <span>Code de secours</span>
-                <span class="pin-pill-key">Échap</span>
-            </button>
-        </div>
+            <!-- Bouton discret Code de secours -->
+            <div style="margin-top: 2px; margin-bottom: 6px;">
+                <button type="button" class="pin-trigger-pill" id="btnPinTrigger" onclick="togglePinModal()" title="Saisir le code PIN de secours (Touche Échap)">
+                    <span style="font-size: 13px;">🔢</span>
+                    <span>Code de secours</span>
+                    <span class="pin-pill-key">Échap</span>
+                </button>
+            </div>
 
-        <div class="footer-hint" id="footerHint">
-            <div class="pulse-dot"></div>
-            <span>En attente de votre empreinte sur le capteur latéral...</span>
+            <div class="footer-hint" id="footerHint">
+                <div class="pulse-dot"></div>
+                <span>En attente de votre empreinte sur le capteur latéral...</span>
+            </div>
         </div>
     </div>
 
@@ -1097,7 +1076,7 @@
         </div>
     </div>
 
-    <!-- Modal Secrète Code PIN avec Animation Spatiale (Touche Échap) -->
+    <!-- Modal Secrète Code PIN avec Animation Spatiale visionOS (Touche Échap) -->
     <div class="pin-modal-overlay" id="pinModal" onclick="onPinOverlayClick(event)">
         <div class="pin-card" id="pinCard" onclick="event.stopPropagation()">
             <div class="pin-header-row">
@@ -1146,12 +1125,12 @@
         window.addEventListener('selectstart', (e) => e.preventDefault(), true);
 
         // ====================================================================
-        // GESTION DU CANVAS PARTICULES (60 FPS FLUIDE)
+        // GESTION DU CANVAS PARTICULES COSMIQUES MULTI-PROFONDEURS (60 FPS)
         // ====================================================================
         const canvas = document.getElementById('bgCanvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        const PARTICLE_COUNT = 50;
+        const PARTICLE_COUNT = 65;
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -1167,22 +1146,39 @@
             reset() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 0.8;
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.speedY = (Math.random() - 0.5) * 0.4;
-                this.alpha = Math.random() * 0.5 + 0.15;
+                this.layer = Math.random(); // 0 = lointain, 1 = proche
+                this.size = this.layer * 2.2 + 0.6;
+                this.baseAlpha = this.layer * 0.5 + 0.15;
+                this.alpha = this.baseAlpha;
+                this.speedX = (Math.random() - 0.5) * (this.layer * 0.4 + 0.1);
+                this.speedY = -Math.random() * (this.layer * 0.5 + 0.1);
+                this.pulseSpeed = Math.random() * 0.02 + 0.005;
+                this.pulseOffset = Math.random() * Math.PI * 2;
+                // Palette chromatique spatiale (Cyan, Indigo, Perle)
+                const colors = [
+                    'rgba(56, 189, 248, ',
+                    'rgba(129, 140, 248, ',
+                    'rgba(167, 139, 250, ',
+                    'rgba(255, 255, 255, '
+                ];
+                this.colorPrefix = colors[Math.floor(Math.random() * colors.length)];
             }
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
-                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                this.alpha = this.baseAlpha + Math.sin(Date.now() * this.pulseSpeed + this.pulseOffset) * 0.2;
+
+                if (this.y < -10 || this.x < -10 || this.x > canvas.width + 10) {
                     this.reset();
+                    this.y = canvas.height + 5;
                 }
             }
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(129, 140, 248, ${this.alpha})`;
+                ctx.fillStyle = this.colorPrefix + Math.max(0, Math.min(1, this.alpha)) + ')';
+                ctx.shadowColor = this.colorPrefix + '0.7)';
+                ctx.shadowBlur = this.layer > 0.6 ? 8 : 2;
                 ctx.fill();
             }
         }
@@ -1193,37 +1189,85 @@
 
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Connexions constellation subtiles entre particules proches
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 85) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        const lineAlpha = (1 - dist / 85) * 0.12;
+                        ctx.strokeStyle = `rgba(129, 140, 248, ${lineAlpha})`;
+                        ctx.shadowBlur = 0;
+                        ctx.stroke();
+                    }
+                }
+            }
+
             particles.forEach(p => {
                 p.update();
                 p.draw();
             });
+
             requestAnimationFrame(animateParticles);
         }
         animateParticles();
 
         // ====================================================================
-        // ÉLÉMENTS DOM & ACTIONS DE TRANSITION
+        // INCLINAISON PARALLAXE 3D ET SPOTLIGHT AU CURSEUR DE SOURIS
         // ====================================================================
-        const realDesktopBg = document.getElementById('realDesktopBg');
+        const spatialWrapper = document.getElementById('spatialWrapper');
+        let mouseTargetX = 0, mouseTargetY = 0;
+        let currentTiltX = 0, currentTiltY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            mouseTargetX = ((e.clientX - cx) / cx) * 5;  // Max 5 degrés de tilt
+            mouseTargetY = -((e.clientY - cy) / cy) * 5;
+
+            // Mise à jour de la lueur spéculaire sur le verre
+            document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+        });
+
+        function renderParallax() {
+            currentTiltX += (mouseTargetX - currentTiltX) * 0.08;
+            currentTiltY += (mouseTargetY - currentTiltY) * 0.08;
+
+            if (spatialWrapper && document.body.classList.contains('locked')) {
+                spatialWrapper.style.transform = `translate(-50%, -50%) rotateY(${currentTiltX.toFixed(2)}deg) rotateX(${currentTiltY.toFixed(2)}deg)`;
+            }
+            requestAnimationFrame(renderParallax);
+        }
+        renderParallax();
+
+        // ====================================================================
+        // GESTION DU CADENAS & CINÉMATIQUES SPATIALES APPLE VISION PRO
+        // ====================================================================
         const lockHub = document.getElementById('lockHub');
-        const mainContainer = document.getElementById('mainContainer');
-        const txtTitle = document.getElementById('txtTitle');
-        const txtSubtitle = document.getElementById('txtSubtitle');
-        const footerHint = document.getElementById('footerHint');
+        const shackleGroup = document.getElementById('shackleGroup');
         const scanLaser = document.getElementById('scanLaser');
         const shockwave = document.getElementById('unlockShockwave');
         const lockingWave = document.getElementById('lockingWave');
+        const txtTitle = document.getElementById('txtTitle');
+        const txtSubtitle = document.getElementById('txtSubtitle');
+        const footerHint = document.getElementById('footerHint');
         const appleVisionStage = document.getElementById('appleVisionStage');
-        const shackleGroup = document.getElementById('shackleGroup');
+        const realDesktopBg = document.getElementById('realDesktopBg');
 
-        // Préparation instantanée du verrouillage (bureau 100% net au départ, aucun saut visuel)
+        // Préparation instantanée (35ms) sans saut visuel
         function prepareLock() {
             document.body.className = 'lock-prep';
             if (realDesktopBg) {
                 realDesktopBg.style.backgroundImage = "url('desktop_bg.jpg?t=" + Date.now() + "')";
             }
-            if (mainContainer) {
-                mainContainer.removeAttribute('style');
+            if (spatialWrapper) {
+                spatialWrapper.removeAttribute('style');
             }
             if (shackleGroup) {
                 shackleGroup.removeAttribute('style');
@@ -1249,8 +1293,6 @@
             document.body.className = 'locking';
 
             txtTitle.innerText = "Accès PC Verrouillé";
-            txtTitle.style.background = "linear-gradient(135deg, #ffffff 40%, #c7d2fe 100%)";
-            txtTitle.style.webkitBackgroundClip = "text";
             txtSubtitle.innerText = "Vérification biométrique requise sur votre Redmi A3";
             footerHint.style.display = "flex";
 
@@ -1270,7 +1312,7 @@
                 scanLaser.style.display = 'block';
             }, 1250);
 
-            // À 2.5s : Stabilisation dans l'état verrouillé PERMANENT (ne disparaît jamais !)
+            // À 2.5s : Stabilisation dans l'état verrouillé PERMANENT
             setTimeout(() => {
                 document.body.className = 'locked';
                 lockHub.classList.remove('locking-snap');
@@ -1297,13 +1339,13 @@
                 shockwave.classList.add('active');
             }
 
-            // Phase 2 (0.75s) : Le cadenas s'élève doucement et se dissout dans un flou
+            // Phase 2 (0.75s) : Le conteneur s'élève doucement et se dissout dans un flou
             setTimeout(() => {
-                if (mainContainer) {
-                    mainContainer.style.transition = 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.85s ease';
-                    mainContainer.style.opacity = '0';
-                    mainContainer.style.transform = 'translate(-50%, calc(-50% - 40px)) scale(0.92)';
-                    mainContainer.style.filter = 'blur(16px)';
+                if (spatialWrapper) {
+                    spatialWrapper.style.transition = 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.85s ease';
+                    spatialWrapper.style.opacity = '0';
+                    spatialWrapper.style.transform = 'translate(-50%, calc(-50% - 40px)) scale(0.92)';
+                    spatialWrapper.style.filter = 'blur(16px)';
                 }
             }, 750);
 
@@ -1337,7 +1379,7 @@
         }
 
         // ====================================================================
-        // MODAL CODE PIN SECRÈTE (F12 / Ctrl+U / Clavier Numérique & Clic)
+        // MODAL CODE PIN SECRÈTE (Échap / F12 / Pavé Numérique & Clic)
         // ====================================================================
         const pinModal = document.getElementById('pinModal');
         const pinCard = document.getElementById('pinCard');
@@ -1418,55 +1460,77 @@
 
         function submitPin(pin) {
             if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.verify_pin === 'function') {
-                window.pywebview.api.verify_pin(pin).then(isValid => {
-                    handlePinResult(isValid);
-                }).catch(err => {
-                    console.error("[!] Erreur appel pywebview verify_pin:", err);
-                    handlePinResult(pin === "1234");
+                window.pywebview.api.verify_pin(pin).then((isValid) => {
+                    if (isValid) {
+                        dots.forEach(d => {
+                            d.style.background = '#10b981';
+                            d.style.borderColor = '#10b981';
+                            d.style.boxShadow = '0 0 20px #10b981';
+                        });
+                        setTimeout(() => {
+                            closePinModal();
+                            triggerUnlock();
+                        }, 250);
+                    } else {
+                        onPinError();
+                    }
+                }).catch(() => {
+                    onPinError();
                 });
             } else {
-                handlePinResult(pin === "1234");
+                // Mode test démo sans backend PyWebView
+                if (pin === "1234") {
+                    dots.forEach(d => {
+                        d.style.background = '#10b981';
+                        d.style.borderColor = '#10b981';
+                        d.style.boxShadow = '0 0 20px #10b981';
+                    });
+                    setTimeout(() => {
+                        closePinModal();
+                        triggerUnlock();
+                    }, 250);
+                } else {
+                    onPinError();
+                }
             }
         }
 
-        function handlePinResult(isValid) {
-            if (isValid) {
-                dots.forEach(d => { if (d) d.className = 'pin-dot success'; });
-                setTimeout(() => {
-                    closePinModal();
-                    triggerUnlock();
-                }, 350);
-            } else {
-                dots.forEach(d => { if (d) d.className = 'pin-dot error'; });
+        function onPinError() {
+            if (pinCard) {
                 pinCard.classList.add('shake');
+                dots.forEach(d => {
+                    d.style.background = '#f43f5e';
+                    d.style.borderColor = '#f43f5e';
+                    d.style.boxShadow = '0 0 20px #f43f5e';
+                });
                 setTimeout(() => {
                     pinCard.classList.remove('shake');
+                    dots.forEach(d => d.removeAttribute('style'));
                     enteredPin = "";
                     isSubmittingPin = false;
                     updateDots();
-                }, 600);
+                }, 500);
             }
         }
 
-        // ÉCOUTEUR CLAVIER GLOBAL (Capture phase = priorité absolue)
+        // ====================================================================
+        // ÉCOUTEURS CLAVIER (ÉCHAP, F12, TOUCHES NUMÉRIQUES, NUMPAD, AZERTY)
+        // ====================================================================
         window.addEventListener('keydown', (e) => {
-            // 1. Touche ÉCHAP : Déclencheur direct pour afficher / masquer l'interface de code
-            if (e.key === 'Escape' || e.code === 'Escape') {
+            const isEscape = (e.key === 'Escape' || e.code === 'Escape' || e.keyCode === 27);
+            const isF12 = (e.key === 'F12' || e.code === 'F12' || e.keyCode === 123);
+            const isCtrlU = (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.code === 'KeyU'));
+            const isLegacyShortcut = (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'u' || e.key === 'U' || e.code === 'KeyU'));
+
+            // 1. Touche Échap seule
+            if (isEscape && !e.ctrlKey && !e.altKey && !e.shiftKey) {
                 e.preventDefault();
                 e.stopPropagation();
                 togglePinModal();
                 return;
             }
 
-            // 2. Raccourcis complémentaires d'ouverture/fermeture :
-            //    - Touche unique F12
-            //    - Ctrl + U
-            //    - Ctrl + Alt + U ou Ctrl + Shift + Alt + U
-            const isF12 = (e.key === 'F12' || e.code === 'F12');
-            const isU = (e.key === 'u' || e.key === 'U' || e.code === 'KeyU');
-            const isCtrlU = (e.ctrlKey && isU);
-            const isLegacyShortcut = (e.ctrlKey && e.altKey && isU);
-
+            // 2. Raccourcis alternatifs
             if (isF12 || isCtrlU || isLegacyShortcut) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1490,12 +1554,11 @@
                     return;
                 }
 
-                // Détection robuste des chiffres (Compatible AZERTY, QWERTY, pavé numérique, Shift/No-Shift)
+                // Détection robuste des chiffres (AZERTY, QWERTY, pavé numérique)
                 let digit = null;
                 if (e.key >= '0' && e.key <= '9') {
                     digit = e.key;
                 } else if (e.code && e.code.startsWith('Digit')) {
-                    // Pour claviers AZERTY où les touches supérieures sans Shift envoient &é"'...
                     const num = e.code.replace('Digit', '');
                     if (num >= '0' && num <= '9') digit = num;
                 } else if (e.code && e.code.startsWith('Numpad') && e.code.length === 7) {
