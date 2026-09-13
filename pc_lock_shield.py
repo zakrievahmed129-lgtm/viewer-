@@ -77,6 +77,7 @@ VK_ESCAPE = 0x1B
 VK_LWIN = 0x5B
 VK_RWIN = 0x5C
 VK_F4 = 0x73
+VK_F12 = 0x7B
 VK_CONTROL = 0x11
 VK_SHIFT = 0x10
 VK_MENU = 0x12
@@ -109,10 +110,22 @@ def _low_level_keyboard_proc(nCode, wParam, lParam):
         shift_down = (ctypes.windll.user32.GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0
         alt_down = (ctypes.windll.user32.GetAsyncKeyState(VK_MENU) & 0x8000) != 0 or alt_pressed
 
-        # Raccourci discret : Ctrl + Shift + Alt + U
-        if vk == ord('U') and ctrl_down and shift_down and alt_down:
-            if shield_instance:
-                shield_instance.prompt_discrete_pin()
+        # Raccourcis pour afficher le code PIN de secours :
+        # - F12 (touche unique directe et infaillible)
+        # - Ctrl + U (facile et immédiat)
+        # - Ctrl + Shift + Alt + U (raccourci historique)
+        is_u = (vk in (ord('U'), 0x55, ord('u')))
+        is_pin_trigger = (
+            (vk == VK_F12) or
+            (ctrl_down and is_u) or
+            (ctrl_down and alt_down and is_u) or
+            (ctrl_down and shift_down and alt_down and is_u)
+        )
+        if is_pin_trigger:
+            if shield_instance and shield_instance.is_locked:
+                # IMPORTANT : Exécution asynchrone dans un thread séparé !
+                # evaluate_js ne doit JAMAIS bloquer le thread de hook Win32 synchrone.
+                threading.Thread(target=shield_instance.prompt_discrete_pin, daemon=True).start()
             return 1
 
         if vk in (VK_LWIN, VK_RWIN):
@@ -709,9 +722,10 @@ class BiometricLockShield:
     def prompt_discrete_pin(self):
         if self.window and self.is_locked:
             try:
+                log("[*] Raccourci PIN reçu -> Déclenchement de l'affichage de la saisie de code...")
                 self.window.evaluate_js("openPinModal()")
-            except Exception:
-                pass
+            except Exception as e:
+                log(f"[!] Impossible d'ouvrir la modal PIN via WebView2 : {e}")
 
 # ==============================================================================
 # POINT D'ENTRÉE PRINCIPAL
@@ -722,7 +736,7 @@ if __name__ == "__main__":
     log(f"Broker MQTT: {MQTT_BROKER}")
     log(f"Topic Statut: {MQTT_TOPIC_STATUS}")
     log(f"Topic Ordres: {MQTT_TOPIC_CMD}")
-    log(f"Raccourci discret secret: Ctrl + Shift + Alt + U")
+    log(f"Raccourci PIN de secours: F12 ou Ctrl+U (ou clic sur le cadenas)")
     
     shield = BiometricLockShield()
     api = LockJsApi()

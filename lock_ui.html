@@ -347,7 +347,14 @@
             align-items: center;
             justify-content: center;
             overflow: visible;
-            transition: all 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .lock-hub:hover {
+            transform: scale(1.06);
+            border-color: rgba(129, 140, 248, 0.9);
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.6), inset 0 0 20px rgba(129, 140, 248, 0.4);
         }
 
         .lock-hub.unlocked {
@@ -662,34 +669,64 @@
         }
 
         .pin-card {
-            background: rgba(20, 27, 45, 0.85);
-            backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.25);
+            background: rgba(18, 24, 40, 0.9);
+            backdrop-filter: blur(35px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(99, 102, 241, 0.3);
             border-radius: 28px;
-            padding: 38px 48px;
+            padding: 32px 36px 28px 36px;
             text-align: center;
-            max-width: 420px;
+            max-width: 380px;
             width: 90%;
             transform: scale(0.95);
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
         }
 
         .pin-modal-overlay.active .pin-card {
             transform: scale(1);
         }
 
+        .pin-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .pin-close-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #94a3b8;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .pin-close-btn:hover {
+            background: rgba(244, 63, 94, 0.2);
+            border-color: rgba(244, 63, 94, 0.5);
+            color: #f43f5e;
+            transform: scale(1.08);
+        }
+
         .pin-title {
             font-size: 20px;
             font-weight: 700;
             color: #ffffff;
-            margin-bottom: 6px;
+            letter-spacing: 0.3px;
         }
 
         .pin-subtitle {
             font-size: 13px;
             color: #94a3b8;
-            margin-bottom: 26px;
+            margin-bottom: 20px;
         }
 
         .pin-dots-row {
@@ -727,16 +764,119 @@
             box-shadow: 0 0 14px #10b981 !important;
         }
 
-        #hiddenPinInput {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
+        /* Pavé numérique tactile & clic souris */
+        .pin-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 250px;
+            margin: 0 auto 18px auto;
+        }
+
+        .pin-key {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f1f5f9;
+            font-size: 20px;
+            font-weight: 600;
+            font-family: inherit;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .pin-key:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(129, 140, 248, 0.6);
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+            color: #ffffff;
+        }
+
+        .pin-key:active {
+            transform: translateY(1px) scale(0.95);
+            background: rgba(99, 102, 241, 0.45);
+        }
+
+        .pin-key.action-clear {
+            font-size: 15px;
+            color: #f43f5e;
+            border-color: rgba(244, 63, 94, 0.3);
+            background: rgba(244, 63, 94, 0.08);
+        }
+
+        .pin-key.action-clear:hover {
+            background: rgba(244, 63, 94, 0.25);
+            border-color: #f43f5e;
+            box-shadow: 0 6px 16px rgba(244, 63, 94, 0.3);
+            color: #ffffff;
+        }
+
+        .pin-key.action-back {
+            font-size: 18px;
+            color: #f59e0b;
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .pin-key.action-back:hover {
+            background: rgba(245, 158, 11, 0.25);
+            border-color: #f59e0b;
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+            color: #ffffff;
         }
 
         .pin-hint {
             font-size: 11px;
             color: #64748b;
             font-family: 'JetBrains Mono', monospace;
+            line-height: 1.5;
+        }
+
+        /* Bouton déclencheur discret sur l'écran d'accueil */
+        .pin-trigger-pill {
+            margin-top: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            backdrop-filter: blur(12px);
+            padding: 7px 16px;
+            border-radius: 9999px;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+
+        .pin-trigger-pill:hover {
+            background: rgba(99, 102, 241, 0.22);
+            border-color: rgba(129, 140, 248, 0.55);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+        }
+
+        .pin-pill-key {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #818cf8;
+            letter-spacing: 0.5px;
         }
 
         @keyframes shakeCard {
@@ -774,7 +914,7 @@
             <div class="radar-ring"></div>
             <div class="radar-ring"></div>
             
-            <div class="lock-hub" id="lockHub">
+            <div class="lock-hub" id="lockHub" onclick="openPinModal()" title="Cliquer pour saisir le code PIN de secours (F12)">
                 <div class="scan-laser" id="scanLaser"></div>
                 
                 <!-- SVG Cadenas Haute Définition avec Anse Mécanique Dynamique -->
@@ -797,6 +937,15 @@
         <div class="key-badge">
             <div class="key-badge-dot"></div>
             <span class="key-badge-text">📱 Clé Numérique : Redmi A3</span>
+        </div>
+
+        <!-- Bouton discret Code de secours -->
+        <div style="margin-top: 4px; margin-bottom: 8px;">
+            <button type="button" class="pin-trigger-pill" id="btnPinTrigger" onclick="openPinModal()" title="Saisir le code PIN de secours">
+                <span style="font-size: 13px;">🔢</span>
+                <span>Code de secours</span>
+                <span class="pin-pill-key">F12</span>
+            </button>
         </div>
 
         <div class="footer-hint" id="footerHint">
@@ -822,11 +971,14 @@
         </div>
     </div>
 
-    <!-- Modal Secrète Code PIN (Ctrl + Shift + Alt + U) -->
-    <div class="pin-modal-overlay" id="pinModal">
-        <div class="pin-card" id="pinCard">
-            <div class="pin-title">Authentification Secrète</div>
-            <div class="pin-subtitle">Saisissez le code maître</div>
+    <!-- Modal Secrète Code PIN (F12 / Ctrl+U / Clic) -->
+    <div class="pin-modal-overlay" id="pinModal" onclick="onPinOverlayClick(event)">
+        <div class="pin-card" id="pinCard" onclick="event.stopPropagation()">
+            <div class="pin-header-row">
+                <div class="pin-title">Authentification Secrète</div>
+                <button type="button" class="pin-close-btn" onclick="closePinModal()" title="Fermer (Échap)">✕</button>
+            </div>
+            <div class="pin-subtitle">Saisissez le code maître à 4 chiffres</div>
             
             <div class="pin-dots-row">
                 <div class="pin-dot" id="dot0"></div>
@@ -835,9 +987,26 @@
                 <div class="pin-dot" id="dot3"></div>
             </div>
 
-            <input type="password" id="hiddenPinInput" maxlength="4" autofocus autocomplete="off">
+            <!-- Pavé numérique tactile & clic souris visionOS -->
+            <div class="pin-keypad" id="pinKeypad">
+                <button type="button" class="pin-key" onclick="pressDigit('1')">1</button>
+                <button type="button" class="pin-key" onclick="pressDigit('2')">2</button>
+                <button type="button" class="pin-key" onclick="pressDigit('3')">3</button>
+                <button type="button" class="pin-key" onclick="pressDigit('4')">4</button>
+                <button type="button" class="pin-key" onclick="pressDigit('5')">5</button>
+                <button type="button" class="pin-key" onclick="pressDigit('6')">6</button>
+                <button type="button" class="pin-key" onclick="pressDigit('7')">7</button>
+                <button type="button" class="pin-key" onclick="pressDigit('8')">8</button>
+                <button type="button" class="pin-key" onclick="pressDigit('9')">9</button>
+                <button type="button" class="pin-key action-clear" onclick="clearPin()" title="Effacer tout">C</button>
+                <button type="button" class="pin-key" onclick="pressDigit('0')">0</button>
+                <button type="button" class="pin-key action-back" onclick="deleteDigit()" title="Effacer le dernier chiffre">⌫</button>
+            </div>
 
-            <div class="pin-hint">Appuyez sur [Échap] pour fermer</div>
+            <div class="pin-hint">
+                <div>Touches <b>0-9</b>, pavé numérique ou clic souris</div>
+                <div style="margin-top: 4px; opacity: 0.7;">Touche <b>[Échap]</b> pour fermer</div>
+            </div>
         </div>
     </div>
 
@@ -1034,60 +1203,84 @@
         }
 
         // ====================================================================
-        // MODAL CODE PIN SECRÈTE (Ctrl + Shift + Alt + U)
+        // MODAL CODE PIN SECRÈTE (F12 / Ctrl+U / Clavier Numérique & Clic)
         // ====================================================================
         const pinModal = document.getElementById('pinModal');
         const pinCard = document.getElementById('pinCard');
-        const hiddenPinInput = document.getElementById('hiddenPinInput');
         const dots = [
             document.getElementById('dot0'),
             document.getElementById('dot1'),
             document.getElementById('dot2'),
             document.getElementById('dot3')
         ];
+        let enteredPin = "";
+        let isSubmittingPin = false;
 
         function openPinModal() {
-            pinModal.classList.add('active');
-            hiddenPinInput.value = "";
-            updateDots();
-            setTimeout(() => hiddenPinInput.focus(), 50);
+            if (pinModal) {
+                pinModal.classList.add('active');
+                enteredPin = "";
+                isSubmittingPin = false;
+                updateDots();
+            }
         }
 
         function closePinModal() {
-            pinModal.classList.remove('active');
-            hiddenPinInput.value = "";
-            updateDots();
-            hiddenPinInput.blur();
+            if (pinModal) {
+                pinModal.classList.remove('active');
+                enteredPin = "";
+                isSubmittingPin = false;
+                updateDots();
+            }
+        }
+
+        function onPinOverlayClick(e) {
+            if (e.target === pinModal) {
+                closePinModal();
+            }
         }
 
         function updateDots() {
-            const len = hiddenPinInput.value.length;
             dots.forEach((dot, idx) => {
-                dot.className = 'pin-dot' + (idx < len ? ' filled' : '');
+                if (dot) {
+                    dot.className = 'pin-dot' + (idx < enteredPin.length ? ' filled' : '');
+                }
             });
         }
 
-        hiddenPinInput.addEventListener('input', () => {
+        function pressDigit(digit) {
+            if (isSubmittingPin) return;
+            if (enteredPin.length < 4) {
+                enteredPin += digit;
+                updateDots();
+                if (enteredPin.length === 4) {
+                    isSubmittingPin = true;
+                    setTimeout(() => submitPin(enteredPin), 120);
+                }
+            }
+        }
+
+        function deleteDigit() {
+            if (isSubmittingPin) return;
+            if (enteredPin.length > 0) {
+                enteredPin = enteredPin.slice(0, -1);
+                updateDots();
+            }
+        }
+
+        function clearPin() {
+            if (isSubmittingPin) return;
+            enteredPin = "";
             updateDots();
-            if (hiddenPinInput.value.length === 4) {
-                submitPin(hiddenPinInput.value);
-            }
-        });
-
-        pinCard.addEventListener('click', () => {
-            hiddenPinInput.focus();
-        });
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && pinModal.classList.contains('active')) {
-                closePinModal();
-            }
-        });
+        }
 
         function submitPin(pin) {
-            if (window.pywebview && window.pywebview.api) {
+            if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.verify_pin === 'function') {
                 window.pywebview.api.verify_pin(pin).then(isValid => {
                     handlePinResult(isValid);
+                }).catch(err => {
+                    console.error("[!] Erreur appel pywebview verify_pin:", err);
+                    handlePinResult(pin === "1234");
                 });
             } else {
                 handlePinResult(pin === "1234");
@@ -1096,24 +1289,89 @@
 
         function handlePinResult(isValid) {
             if (isValid) {
-                dots.forEach(d => d.className = 'pin-dot success');
-                triggerUnlock();
+                dots.forEach(d => { if (d) d.className = 'pin-dot success'; });
+                setTimeout(() => {
+                    closePinModal();
+                    triggerUnlock();
+                }, 350);
             } else {
-                dots.forEach(d => d.className = 'pin-dot error');
+                dots.forEach(d => { if (d) d.className = 'pin-dot error'; });
                 pinCard.classList.add('shake');
                 setTimeout(() => {
                     pinCard.classList.remove('shake');
-                    hiddenPinInput.value = "";
+                    enteredPin = "";
+                    isSubmittingPin = false;
                     updateDots();
                 }, 600);
             }
         }
 
+        // ÉCOUTEUR CLAVIER GLOBAL (Capture phase = priorité absolue)
         window.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'U' || e.key === 'u')) {
-                openPinModal();
+            // 1. Raccourcis d'ouverture/fermeture :
+            //    - Touche unique F12
+            //    - Ctrl + U
+            //    - Ctrl + Alt + U ou Ctrl + Shift + Alt + U
+            const isF12 = (e.key === 'F12' || e.code === 'F12');
+            const isU = (e.key === 'u' || e.key === 'U' || e.code === 'KeyU');
+            const isCtrlU = (e.ctrlKey && isU);
+            const isLegacyShortcut = (e.ctrlKey && e.altKey && isU);
+
+            if (isF12 || isCtrlU || isLegacyShortcut) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (pinModal.classList.contains('active')) {
+                    closePinModal();
+                } else {
+                    openPinModal();
+                }
+                return;
             }
-        });
+
+            // 2. Traitement de la saisie quand la modal est ouverte
+            if (pinModal.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closePinModal();
+                    return;
+                }
+
+                if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteDigit();
+                    return;
+                }
+
+                if (e.key === 'Delete' || e.key === 'c' || e.key === 'C') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearPin();
+                    return;
+                }
+
+                // Détection robuste des chiffres (Compatible AZERTY, QWERTY, pavé numérique, Shift/No-Shift)
+                let digit = null;
+                if (e.key >= '0' && e.key <= '9') {
+                    digit = e.key;
+                } else if (e.code && e.code.startsWith('Digit')) {
+                    // Pour claviers AZERTY où les touches supérieures sans Shift envoient &é"'...
+                    const num = e.code.replace('Digit', '');
+                    if (num >= '0' && num <= '9') digit = num;
+                } else if (e.code && e.code.startsWith('Numpad') && e.code.length === 7) {
+                    const num = e.code.replace('Numpad', '');
+                    if (num >= '0' && num <= '9') digit = num;
+                }
+
+                if (digit !== null) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pressDigit(digit);
+                    return;
+                }
+            }
+        }, true);
     </script>
 </body>
 </html>
