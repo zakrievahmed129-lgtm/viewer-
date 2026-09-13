@@ -101,7 +101,7 @@ class KBDLLHOOKSTRUCT(ctypes.Structure):
 
 def _low_level_keyboard_proc(nCode, wParam, lParam):
     global hook_active
-    if nCode >= 0 and hook_active:
+    if nCode >= 0 and hook_active and shield_instance and shield_instance.is_locked:
         kbd = KBDLLHOOKSTRUCT.from_address(lParam)
         vk = kbd.vkCode
         alt_pressed = (kbd.flags & 0x20) != 0
@@ -110,11 +110,10 @@ def _low_level_keyboard_proc(nCode, wParam, lParam):
         shift_down = (ctypes.windll.user32.GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0
         alt_down = (ctypes.windll.user32.GetAsyncKeyState(VK_MENU) & 0x8000) != 0 or alt_pressed
 
-        # Raccourcis pour afficher le code PIN de secours :
-        # - Échap (VK_ESCAPE : demande utilisateur directe et instantanée)
-        # - F12 (touche alternative)
-        # - Ctrl + U (raccourci 2 touches)
-        # - Ctrl + Shift + Alt + U (raccourci historique)
+        WM_KEYDOWN = 0x0100
+        WM_SYSKEYDOWN = 0x0104
+        is_key_down = (wParam in (WM_KEYDOWN, WM_SYSKEYDOWN))
+
         is_u = (vk in (ord('U'), 0x55, ord('u')))
         is_escape_trigger = (vk == VK_ESCAPE and not alt_pressed and not ctrl_down)
         is_pin_trigger = (
@@ -124,31 +123,40 @@ def _low_level_keyboard_proc(nCode, wParam, lParam):
             (ctrl_down and alt_down and is_u) or
             (ctrl_down and shift_down and alt_down and is_u)
         )
+
+        # 1. Raccourcis d'affichage / fermeture de la modal PIN (Échap / F12 / Ctrl+U)
         if is_pin_trigger:
-            if shield_instance and shield_instance.is_locked:
-                # IMPORTANT : Exécution asynchrone dans un thread séparé !
-                # evaluate_js ne doit JAMAIS bloquer le thread de hook Win32 synchrone.
+            if is_key_down:
                 threading.Thread(target=shield_instance.prompt_discrete_pin, daemon=True).start()
             return 1
 
-        # 1. BLOQUER INCONDITIONNELLEMENT F4 (Alt+F4, Ctrl+F4, F4 seul)
-        if vk == VK_F4:
+        # 2. Saisie directe du PIN : chiffres du haut (0x30..0x39) ou pavé numérique (0x60..0x69)
+        if 0x30 <= vk <= 0x39:
+            if is_key_down:
+                digit = chr(vk)
+                threading.Thread(target=lambda: shield_instance.window.evaluate_js(f"openPinModal(); pressDigit('{digit}');"), daemon=True).start()
             return 1
 
-        # 2. BLOQUER toutes les touches Windows (Win, Win+Tab, Win+D, etc.)
-        if vk in (VK_LWIN, VK_RWIN):
+        if 0x60 <= vk <= 0x69:
+            if is_key_down:
+                digit = str(vk - 0x60)
+                threading.Thread(target=lambda: shield_instance.window.evaluate_js(f"openPinModal(); pressDigit('{digit}');"), daemon=True).start()
             return 1
 
-        # 3. BLOQUER TOUTE combinaison avec Alt (Alt+Tab, Alt+Espace, Alt+Echap, etc.)
-        # Alt+Espace ouvrait le menu système Windows permettant de déplacer la fenêtre !
-        if alt_down or alt_pressed:
+        # 3. Touches d'effacement du PIN (Retour arrière / Suppr / Touche C)
+        if vk == 0x08:  # Backspace
+            if is_key_down:
+                threading.Thread(target=lambda: shield_instance.window.evaluate_js("deleteDigit();"), daemon=True).start()
             return 1
 
-        # 4. BLOQUER Ctrl+Echap, Ctrl+Espace, Ctrl+Tab, et touche menu contextuel (0x5D)
-        if ctrl_down and vk in (VK_ESCAPE, VK_TAB, 0x20):
+        if vk in (0x2E, ord('C'), ord('c')):  # Delete ou C
+            if is_key_down:
+                threading.Thread(target=lambda: shield_instance.window.evaluate_js("clearPin();"), daemon=True).start()
             return 1
-        if vk == 0x5D:  # VK_APPS
-            return 1
+
+        # 4. BLOCAGE ABSOLU DE TOUTES LES AUTRES TOUCHES (Lettres, Raccourcis, Windows, Alt, Ctrl, etc.)
+        # Aucune touche ne traverse vers Windows tant que le PC n'est pas déverrouillé !
+        return 1
 
     return ctypes.windll.user32.CallNextHookEx(keyboard_hook, nCode, wParam, lParam)
 
@@ -200,6 +208,7 @@ def set_taskmgr_disabled(disabled=True):
 
 @atexit.register
 def cleanup_system():
+    release_cursor_clip()
     uninstall_keyboard_lock()
     set_taskbar_visible(True)
     set_taskmgr_disabled(False)
@@ -222,8 +231,19 @@ _WNDPROC_TYPE = ctypes.WINFUNCTYPE(ctypes.c_longlong, wintypes.HWND, wintypes.UI
 _original_wndproc = None
 _subclass_wndproc_ref = None
 
+user32 = ctypes.windll.user32
+_set_window_long_ptr = getattr(user32, 'SetWindowLongPtrW', None) or getattr(user32, 'SetWindowLongW')
+if ctypes.sizeof(ctypes.c_void_p) == 8:
+    _set_window_long_ptr.restype = ctypes.c_void_p
+    _set_window_long_ptr.argtypes = [wintypes.HWND, ctypes.c_int, _WNDPROC_TYPE]
+else:
+    _set_window_long_ptr.restype = ctypes.c_long
+    _set_window_long_ptr.argtypes = [wintypes.HWND, ctypes.c_int, _WNDPROC_TYPE]
+
+user32.CallWindowProcW.restype = ctypes.c_longlong
+user32.CallWindowProcW.argtypes = [ctypes.c_void_p, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+
 def get_screen_bounds():
-    user32 = ctypes.windll.user32
     SM_XVIRTUALSCREEN = 76
     SM_YVIRTUALSCREEN = 77
     SM_CXVIRTUALSCREEN = 78
@@ -251,7 +271,6 @@ def get_shield_hwnd():
     except Exception:
         pass
     try:
-        user32 = ctypes.windll.user32
         found = []
         def enum_cb(h, l):
             length = user32.GetWindowTextLengthW(h)
@@ -266,11 +285,10 @@ def get_shield_hwnd():
             return found[0]
     except Exception:
         pass
-    return ctypes.windll.user32.FindWindowW(None, "GhostLock Shield")
+    return user32.FindWindowW(None, "GhostLock Shield")
 
 def _lock_shield_wndproc(hwnd, msg, wparam, lparam):
     global _original_wndproc
-    user32 = ctypes.windll.user32
 
     # Si le bouclier est verrouillé, blocage inconditionnel de tout déplacement ou redimensionnement
     if shield_instance and shield_instance.is_locked:
@@ -282,7 +300,7 @@ def _lock_shield_wndproc(hwnd, msg, wparam, lparam):
 
         # 2. Neutralisation de la zone de titre (HTCAPTION=2) et bordures de dimensionnement (10..17)
         elif msg == 0x0084:  # WM_NCHITTEST
-            res = user32.CallWindowProcW(_original_wndproc, hwnd, msg, wparam, lparam)
+            res = user32.CallWindowProcW(_original_wndproc, hwnd, msg, wparam, lparam) if _original_wndproc else user32.DefWindowProcW(hwnd, msg, wparam, lparam)
             if res == 2 or (10 <= res <= 17):
                 return 1  # HTCLIENT (empêche Windows d'initier un glisser-déposer de fenêtre)
             return res
@@ -307,19 +325,29 @@ def _lock_shield_wndproc(hwnd, msg, wparam, lparam):
         elif msg in (0x0216, 0x0214):
             return 0
 
-    return user32.CallWindowProcW(_original_wndproc, hwnd, msg, wparam, lparam)
+    if _original_wndproc:
+        return user32.CallWindowProcW(_original_wndproc, hwnd, msg, wparam, lparam)
+    return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
 
 def apply_window_subclass(hwnd):
     global _original_wndproc, _subclass_wndproc_ref
     if not hwnd or _original_wndproc is not None:
         return
     try:
-        user32 = ctypes.windll.user32
         _subclass_wndproc_ref = _WNDPROC_TYPE(_lock_shield_wndproc)
-        _original_wndproc = user32.SetWindowLongPtrW(hwnd, -4, _subclass_wndproc_ref)  # GWLP_WNDPROC = -4
+        _original_wndproc = _set_window_long_ptr(hwnd, -4, _subclass_wndproc_ref)  # GWLP_WNDPROC = -4
         log("[OK] Subclassing Win32 actif : Rejet absolu de SC_MOVE, WM_NCHITTEST et WM_WINDOWPOSCHANGING.")
     except Exception as e:
         log(f"[!] Erreur application subclassing: {e}")
+
+class WIN_RECT(ctypes.Structure):
+    _fields_ = [('left', ctypes.c_long), ('top', ctypes.c_long), ('right', ctypes.c_long), ('bottom', ctypes.c_long)]
+
+def release_cursor_clip():
+    try:
+        ctypes.windll.user32.ClipCursor(None)
+    except Exception:
+        pass
 
 def pin_window_fullscreen(hwnd=None):
     """Force la fenêtre à occuper l'intégralité de l'écran en position TOPMOST sans bouger"""
@@ -337,6 +365,11 @@ def pin_window_fullscreen(hwnd=None):
         SWP_NOACTIVATE = 0x0010
         user32.SetWindowPos(hwnd, HWND_TOPMOST, vx, vy, vw, vh, SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE)
         user32.SetForegroundWindow(hwnd)
+        user32.BringWindowToTop(hwnd)
+
+        # Confinement matériel de la souris dans la surface du bouclier
+        clip_rect = WIN_RECT(vx, vy, vx + vw, vy + vh)
+        user32.ClipCursor(ctypes.byref(clip_rect))
     except Exception:
         pass
 
@@ -376,14 +409,11 @@ def harden_lock_window():
         log(f"[!] Erreur hardening fenêtre: {e}")
 
 def _window_pin_watchdog():
-    """Surveillance 100ms : Verrouille la fenêtre sur ses coordonnées physiques sans déviation possible"""
+    """Surveillance 50ms : Verrouille la fenêtre sur ses coordonnées physiques et la maintient au premier plan absolu"""
     user32 = ctypes.windll.user32
-    class RECT(ctypes.Structure):
-        _fields_ = [('left', ctypes.c_long), ('top', ctypes.c_long), ('right', ctypes.c_long), ('bottom', ctypes.c_long)]
-
-    rect = RECT()
+    rect = WIN_RECT()
     while True:
-        time.sleep(0.1)
+        time.sleep(0.05)
         if shield_instance and shield_instance.is_locked:
             hwnd = get_shield_hwnd()
             if hwnd:
@@ -392,10 +422,24 @@ def _window_pin_watchdog():
                     user32.GetWindowRect(hwnd, ctypes.byref(rect))
                     cur_w = rect.right - rect.left
                     cur_h = rect.bottom - rect.top
+                    # Si la fenêtre a bougé de ne serait-ce que 1 pixel
                     if rect.left != vx or rect.top != vy or cur_w != vw or cur_h != vh:
                         user32.SetWindowPos(hwnd, -1, vx, vy, vw, vh, 0x0040 | 0x0020 | 0x0010)
+
+                    # Si une autre fenêtre tente de passer devant
+                    fg = user32.GetForegroundWindow()
+                    if fg != hwnd:
+                        user32.SetForegroundWindow(hwnd)
+                        user32.BringWindowToTop(hwnd)
+                        user32.SetWindowPos(hwnd, -1, vx, vy, vw, vh, 0x0040 | 0x0020 | 0x0010)
+
+                    # Maintien du confinement de la souris
+                    clip_rect = WIN_RECT(vx, vy, vx + vw, vy + vh)
+                    user32.ClipCursor(ctypes.byref(clip_rect))
                 except Exception:
                     pass
+        else:
+            time.sleep(0.2)
 
 # ==============================================================================
 # CAPTURE HAUTE VITESSE DU BUREAU (WIN32 GDI - ~35ms)
@@ -939,6 +983,7 @@ class BiometricLockShield:
         # Validation biométrique haute précision (3.0s) + Stage Apple Vision Pro (3.8s) + Défloutage LENT (2.4s)
         # À 8.5s : Restauration des contrôles système alors que le bureau est quasiment net à 95%
         time.sleep(8.5)
+        release_cursor_clip()
         uninstall_keyboard_lock()
         set_taskbar_visible(True)
         set_taskmgr_disabled(False)

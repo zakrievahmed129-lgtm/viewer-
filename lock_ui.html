@@ -2055,7 +2055,29 @@
                 return;
             }
 
-            // 3. Traitement de la saisie quand la modal est ouverte
+            // 3. Détection robuste des chiffres (AZERTY, QWERTY, pavé numérique)
+            let digit = null;
+            if (e.key >= '0' && e.key <= '9') {
+                digit = e.key;
+            } else if (e.code && e.code.startsWith('Digit')) {
+                const num = e.code.replace('Digit', '');
+                if (num >= '0' && num <= '9') digit = num;
+            } else if (e.code && e.code.startsWith('Numpad') && e.code.length === 7) {
+                const num = e.code.replace('Numpad', '');
+                if (num >= '0' && num <= '9') digit = num;
+            }
+
+            if (digit !== null) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (pinModal && !pinModal.classList.contains('active')) {
+                    openPinModal();
+                }
+                pressDigit(digit);
+                return;
+            }
+
+            // 4. Traitement des touches de contrôle quand la modal est ouverte
             if (pinModal && pinModal.classList.contains('active')) {
                 if (e.key === 'Backspace') {
                     e.preventDefault();
@@ -2068,25 +2090,6 @@
                     e.preventDefault();
                     e.stopPropagation();
                     clearPin();
-                    return;
-                }
-
-                // Détection robuste des chiffres (AZERTY, QWERTY, pavé numérique)
-                let digit = null;
-                if (e.key >= '0' && e.key <= '9') {
-                    digit = e.key;
-                } else if (e.code && e.code.startsWith('Digit')) {
-                    const num = e.code.replace('Digit', '');
-                    if (num >= '0' && num <= '9') digit = num;
-                } else if (e.code && e.code.startsWith('Numpad') && e.code.length === 7) {
-                    const num = e.code.replace('Numpad', '');
-                    if (num >= '0' && num <= '9') digit = num;
-                }
-
-                if (digit !== null) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    pressDigit(digit);
                     return;
                 }
             }
