@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GhostLock</string>
+    <string name="target_pc_title">Pc-Zakriev</string>
+    <string name="status_connected">Connecté au Cloud</string>
+    <string name="status_disconnected">Hors ligne</string>
+    <string name="pc_locked_label">ÉTAT DU PC : VERROUILLÉ 🔒</string>
+    <string name="pc_unlocked_label">ÉTAT DU PC : DÉVERROUILLÉ 🔓</string>
+    <string name="btn_unlock_biometric">DÉVERROUILLER AVEC L\'EMPREINTE 👆</string>
+    <string name="btn_lock_pc">VERROUILLER LE PC À DISTANCE 🔒</string>
+    <string name="bio_prompt_title">Déverrouiller Pc-Zakriev</string>
+    <string name="bio_prompt_subtitle">Posez votre doigt sur le capteur d\'empreinte</string>
+    <string name="bio_prompt_negative">Annuler</string>
+    <string name="proximity_enabled_label">Auto-verrouillage à l\'éloignement : ACTIF</string>
+</resources>

@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ghost Phone Stream • Redmi A3 Vision Pro</title>
+  <style>
+    :root {
+      --bg-space: #06070B;
+      --glass-surface: rgba(18, 22, 36, 0.65);
+      --glass-card: rgba(25, 30, 48, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-border-hover: rgba(255, 255, 255, 0.18);
+      --cyan: #06B6D4;
+      --cyan-glow: rgba(6, 182, 212, 0.35);
+      --purple: #A855F7;
+      --purple-glow: rgba(168, 85, 247, 0.35);
+      --emerald: #10B981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --rose: #F43F5E;
+      --rose-glow: rgba(244, 63, 94, 0.35);
+      --amber: #F59E0B;
+      --text-primary: #FFFFFF;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #151a30 0%, var(--bg-space) 65%);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* BARRE D'EN-TÊTE VISION PRO */
+    header {
+      height: 56px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--glass-surface);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-bottom: 1px solid var(--glass-border);
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(168, 85, 247, 0.2));
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      box-shadow: 0 0 16px var(--cyan-glow);
+    }
+
+    .brand-text h1 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #FFFFFF, #93C5FD);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--glass-border);
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber);
+      transition: all 0.3s ease;
+    }
+
+    .pulse-dot.active {
+      background: var(--emerald);
+      box-shadow: 0 0 12px var(--emerald);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ZONE D'AFFICHAGE DU STREAM */
+    main {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 20px 80px 20px;
+      overflow: hidden;
+    }
+
+    .viewport-frame {
+      position: relative;
+      max-width: 100%;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      background: rgba(10, 14, 24, 0.6);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--glass-border);
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .stream-image {
+      max-width: 100%;
+      max-height: calc(100vh - 160px);
+      object-fit: contain;
+      border-radius: 18px;
+      display: none;
+      background: #000;
+    }
+
+    .stream-image.visible {
+      display: block;
+    }
+
+    /* ÉTAT D'ATTENTE / RADAR */
+    .standby-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 50px 70px;
+      text-align: center;
+      max-width: 480px;
+    }
+
+    .standby-radar {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+    }
+
+    .radar-circle.c1 { width: 100%; height: 100%; animation: radarPulse 3s infinite; }
+    .radar-circle.c2 { width: 66%; height: 66%; animation: radarPulse 3s infinite 0.75s; }
+    .radar-circle.c3 { width: 33%; height: 33%; animation: radarPulse 3s infinite 1.5s; }
+
+    .radar-icon {
+      font-size: 32px;
+      position: relative;
+      z-index: 2;
+    }
+
+    @keyframes radarPulse {
+      0% { transform: scale(0.85); opacity: 0.2; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+      100% { transform: scale(0.85); opacity: 0.2; }
+    }
+
+    .standby-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .standby-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* HUD OVERLAY EN TRANSPARENCE */
+    .hud-overlay {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .hud-chip {
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 10px;
+      font-family: ui-monospace, monospace;
+      color: #E2E8F0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* DOCK FLOTTANT SPATIAL */
+    .spatial-dock {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      z-index: 100;
+      transition: all 0.3s ease;
+    }
+
+    .spatial-dock:hover {
+      border-color: var(--glass-border-hover);
+      box-shadow: 0 20px 56px rgba(0, 0, 0, 0.7), 0 0 24px rgba(6, 182, 212, 0.15);
+    }
+
+    .dock-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      outline: none;
+    }
+
+    .dock-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .dock-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .dock-btn.cyan:hover, .dock-btn.cyan.active {
+      background: rgba(6, 182, 212, 0.18);
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px var(--cyan-glow);
+      color: #A5F3FC;
+    }
+
+    .dock-btn.purple:hover, .dock-btn.purple.active {
+      background: rgba(168, 85, 247, 0.18);
+      border-color: var(--purple);
+      box-shadow: 0 0 16px var(--purple-glow);
+      color: #E9D5FF;
+    }
+
+    .dock-btn.emerald:hover {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: var(--emerald);
+      box-shadow: 0 0 16px var(--emerald-glow);
+      color: #A7F3D0;
+    }
+
+    .dock-btn.rose:hover {
+      background: rgba(244, 63, 94, 0.18);
+      border-color: var(--rose);
+      box-shadow: 0 0 16px var(--rose-glow);
+      color: #FECDD3;
+    }
+
+    .dock-btn.subtle {
+      padding: 8px 12px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .dock-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--glass-border);
+      margin: 0 2px;
+    }
+
+    /* FLASH PHOTO INSTANTANÉ */
+    .flash-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #FFFFFF;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity 0.08s ease-out;
+    }
+
+    .flash-overlay.trigger {
+      opacity: 0.8;
+      transition: none;
+    }
+
+    /* TOAST FLOTTANT */
+    .toast {
+      position: fixed;
+      top: 70px;
+      right: 24px;
+      padding: 10px 18px;
+      border-radius: 14px;
+      background: var(--glass-surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      font-size: 12px;
+      font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(-10px);
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* MODAL DE NOTIFICATION SPATIAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 6, 12, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 440px;
+      max-width: 90vw;
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border-hover);
+      border-radius: 24px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 30px rgba(6, 182, 212, 0.15);
+      padding: 24px;
+      transform: scale(0.92) translateY(10px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(90deg, #FFFFFF, #67E8F9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: var(--rose);
+      color: #FFF;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: rgba(10, 14, 26, 0.85);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #FFF;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px var(--cyan-glow);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .preset-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preset-chip:hover {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: var(--cyan);
+      color: #FFF;
+      transform: translateY(-1px);
+    }
+
+    .preview-box {
+      background: #0B0E1C;
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.12);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .preview-badge {
+      background: rgba(6, 182, 212, 0.2);
+      border: 1px solid #06B6D4;
+      color: #06B6D4;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .preview-title {
+      color: #00F0FF;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .preview-msg {
+      color: #FFFFFF;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FLASH EFFET CAPTURE -->
+  <div id="flashOverlay" class="flash-overlay"></div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Message</span>
+  </div>
+
+  <!-- MODAL NOTIFICATION DU PC VERS LE TÉLÉPHONE -->
+  <div class="modal-overlay" id="notifModal" onclick="closeNotifModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔔</span>
+          <span>Alerte & Notification vers Redmi A3</span>
+        </div>
+        <button class="modal-close" onclick="closeNotifModal()">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Titre de l'alerte</label>
+        <input type="text" id="notifTitle" class="form-input" placeholder="Ex: Ghost Alert 💻" value="Ghost Alert 💻" oninput="updatePreview()" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Message personnalisé (Affichage HUD grand format)</label>
+        <textarea id="notifMsg" class="form-textarea" placeholder="Entrez le message qui s'affichera sur votre téléphone..." oninput="updatePreview()"></textarea>
+      </div>
+
+      <label class="form-label">Messages rapides</label>
+      <div class="preset-chips">
+        <span class="preset-chip" onclick="applyPreset('🚨 Alerte Sécurité', 'Attention, présence détectée devant le PC !')">🚨 Sécurité</span>
+        <span class="preset-chip" onclick="applyPreset('👋 Coucou Zakri', 'Message envoyé depuis le Viewer PC !')">👋 Coucou</span>
+        <span class="preset-chip" onclick="applyPreset('📱 Regarde le téléphone', 'Diffusion en cours, déverrouille ton écran !')">📱 Écran</span>
+        <span class="preset-chip" onclick="applyPreset('🔋 Batterie', 'Pense à mettre ton téléphone à charger.')">🔋 Batterie</span>
+        <span class="preset-chip" onclick="applyPreset('🔒 Ghost Lock', 'PC Verrouillé avec succès !')">🔒 Verrouillage</span>
+      </div>
+
+      <!-- APERÇU EN DIRECT DU POP-UP TÉLÉPHONE -->
+      <div class="preview-box">
+        <div class="preview-header">
+          <span class="preview-badge">🚨 GHOST ALERT • PC DIRECT</span>
+          <span style="font-size:10px; color:#94A3B8;">Aperçu Redmi A3</span>
+        </div>
+        <div class="preview-title" id="previewTitle">Ghost Alert 💻</div>
+        <div class="preview-msg" id="previewMsg">Votre message personnalisé apparaîtra en grand ici...</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="dock-btn subtle" onclick="closeNotifModal()">Annuler</button>
+        <button class="dock-btn cyan" onclick="sendCustomNotification()">
+          🚀 Envoyer l'Alerte au Téléphone
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER VISION PRO -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">📱</div>
+      <div class="brand-text">
+        <h1>Ghost Phone Stream</h1>
+        <p>Xiaomi Redmi A3 • Android Go Direct Mirror</p>
+      </div>
+    </div>
+
+    <div class="header-status">
+      <div class="status-pill">
+        <div id="pulseDot" class="pulse-dot"></div>
+        <span id="txtConnection">RECHERCHE REDMI A3...</span>
+      </div>
+      <div class="status-pill" id="pillMode">
+        <span id="txtMode">MODE: VEILLE</span>
+      </div>
+      <div class="status-pill" id="pillUrl" style="cursor:pointer;" title="Cliquez pour changer l'IP manuellement">
+        <span id="txtUrl">http://...:8888</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- AFFICHAGE DU STREAM -->
+  <main>
+    <div class="viewport-frame" id="viewportFrame">
+      <!-- HUD INFOS -->
+      <div class="hud-overlay" id="hudOverlay" style="display:none;">
+        <div class="hud-chip">🔴 DIRECT</div>
+        <div class="hud-chip" id="hudFps">15 FPS</div>
+        <div class="hud-chip" id="hudRes">540x1200</div>
+      </div>
+
+      <!-- IMAGE DU FLUX DIRECT -->
+      <img id="streamImg" class="stream-image" alt="Flux vidéo Redmi A3" />
+
+      <!-- ÉCRAN DE VEILLE / RECHERCHE -->
+      <div class="standby-container" id="standbyContainer">
+        <div class="standby-radar">
+          <div class="radar-circle c1"></div>
+          <div class="radar-circle c2"></div>
+          <div class="radar-circle c3"></div>
+          <div class="radar-icon">📡</div>
+        </div>
+        <h2 class="standby-title" id="standbyTitle">Prêt pour la Diffusion</h2>
+        <p class="standby-desc" id="standbyDesc">
+          Pour voir votre téléphone sur ce PC, sélectionnez l'une des options dans la barre spatiale ci-dessous ou lancez le partage directement depuis l'application GhostLock sur votre Redmi A3.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- DOCK FLOTTANT SPATIAL VISION PRO -->
+  <nav class="spatial-dock">
+    <button class="dock-btn cyan" id="btnScreen" onclick="startStream('screen')">
+      📱 Écran Téléphone
+    </button>
+    <button class="dock-btn purple" id="btnCamBack" onclick="startStream('camera_back')">
+      📷 Caméra Arrière
+    </button>
+    <button class="dock-btn purple" id="btnCamFront" onclick="startStream('camera_front')">
+      🤳 Caméra Avant
+    </button>
+
+    <div class="dock-divider"></div>
+
+    <button class="dock-btn emerald" id="btnNotif" onclick="openNotifModal()" title="Envoyer une notification personnalisée au Redmi A3">
+      🔔 Notifier
+    </button>
+    <button class="dock-btn subtle" id="btnKeepScreen" onclick="toggleKeepScreen()" title="Maintenir l'écran du téléphone allumé (Anti-Veille)">
+      💡 Anti-Veille
+    </button>
+
+    <div class="dock-divider"></div>
+
+    <button class="dock-btn emerald" id="btnSnapshot" onclick="takeSnapshot()">
+      📸 Capturer
+    </button>
+    <button class="dock-btn rose" id="btnStop" onclick="stopStream()">
+      ⏹ Arrêter
+    </button>
+
+    <div class="dock-divider"></div>
+
+    <button class="dock-btn subtle" onclick="openInExternalBrowser()" title="Ouvrir directement dans votre navigateur Web (Chrome, Edge...)">
+      🌐
+    </button>
+    <button class="dock-btn subtle" onclick="promptManualIp()" title="Configurer l'IP manuelle">
+      ⚙️
+    </button>
+    <button class="dock-btn subtle" onclick="toggleFullscreen()" title="Plein écran">
+      ⛶
+    </button>
+  </nav>
+
+  <script>
+    let currentStreamUrl = "";
+    let activeMode = "idle";
+    let isStreaming = false;
+    let manualPhoneIp = "";
+    let keepScreenActive = false;
+
+    const streamImg = document.getElementById("streamImg");
+    const standbyContainer = document.getElementById("standbyContainer");
+    const hudOverlay = document.getElementById("hudOverlay");
+    const pulseDot = document.getElementById("pulseDot");
+    const txtConnection = document.getElementById("txtConnection");
+    const txtMode = document.getElementById("txtMode");
+    const txtUrl = document.getElementById("txtUrl");
+    const flashOverlay = document.getElementById("flashOverlay");
+
+    // Boutons du Dock
+    const btnScreen = document.getElementById("btnScreen");
+    const btnCamBack = document.getElementById("btnCamBack");
+    const btnCamFront = document.getElementById("btnCamFront");
+
+    function showToast(msg, icon = "✨") {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastMsg").innerText = msg;
+      document.getElementById("toastIcon").innerText = icon;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    function updatePreview() {
+      const title = document.getElementById("notifTitle").value.trim() || "Ghost Alert 💻";
+      const message = document.getElementById("notifMsg").value.trim() || "Votre message personnalisé apparaîtra en grand ici...";
+      const pTitle = document.getElementById("previewTitle");
+      const pMsg = document.getElementById("previewMsg");
+      if (pTitle) pTitle.innerText = title;
+      if (pMsg) pMsg.innerText = message;
+    }
+
+    function applyPreset(title, msg) {
+      document.getElementById("notifTitle").value = title;
+      document.getElementById("notifMsg").value = msg;
+      updatePreview();
+    }
+
+    function openNotifModal() {
+      document.getElementById("notifModal").classList.add("open");
+      updatePreview();
+      setTimeout(() => document.getElementById("notifMsg").focus(), 150);
+    }
+
+    function closeNotifModal(e) {
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains("modal-close")) return;
+      document.getElementById("notifModal").classList.remove("open");
+    }
+
+    function sendCustomNotification() {
+      const title = document.getElementById("notifTitle").value.trim() || "Message du PC de zakri 💻";
+      let message = document.getElementById("notifMsg").value.trim();
+
+      if (!message) {
+        message = "Transmission en direct reçue depuis le PC !";
+      }
+
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.sendPhoneNotification(title, message);
+      }
+      showToast("Alerte HUD projetée sur le Redmi A3 !", "🚀");
+      closeNotifModal();
+      document.getElementById("notifMsg").value = "";
+      updatePreview();
+    }
+
+    function toggleKeepScreen() {
+      keepScreenActive = !keepScreenActive;
+      const btn = document.getElementById("btnKeepScreen");
+      if (keepScreenActive) {
+        btn.classList.add("cyan");
+        btn.style.color = "#A5F3FC";
+        showToast("Anti-Veille Activé : L'écran restera allumé", "💡");
+      } else {
+        btn.classList.remove("cyan");
+        btn.style.color = "";
+        showToast("Anti-Veille Désactivé", "🌙");
+      }
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.toggleKeepScreenOn(keepScreenActive);
+      }
+    }
+
+    // Réception du statut MQTT transmis par Python (PyWebView API)
+    function onStatusReceived(statusJson) {
+      try {
+        const data = typeof statusJson === "string" ? JSON.parse(statusJson) : statusJson;
+        const ip = manualPhoneIp || data.ip || "127.0.0.1";
+        const port = data.port || 8888;
+        const mode = data.mode || "idle";
+        const active = data.is_active || false;
+
+        currentStreamUrl = `http://${ip}:${port}/stream.mjpg`;
+        txtUrl.innerText = `${ip}:${port}`;
+
+        if (active && mode !== "idle") {
+          pulseDot.classList.add("active");
+          txtConnection.innerText = "REDMI A3 EN DIRECT";
+          txtMode.innerText = `MODE: ${mode.toUpperCase()}`;
+          setStreamDisplay(true, mode, currentStreamUrl);
+        } else {
+          pulseDot.classList.remove("active");
+          txtConnection.innerText = "CONNECTÉ (VEILLE)";
+          txtMode.innerText = "MODE: VEILLE";
+          setStreamDisplay(false);
+        }
+        updateDockButtons(mode, active);
+      } catch (e) {
+        console.error("Erreur statut :", e);
+      }
+    }
+
+    function setStreamDisplay(show, mode = "", url = "") {
+      if (show) {
+        if (streamImg.src !== url) {
+          streamImg.src = url + "?t=" + Date.now();
+        }
+        streamImg.classList.add("visible");
+        standbyContainer.style.display = "none";
+        hudOverlay.style.display = "flex";
+
+        const hudRes = document.getElementById("hudRes");
+        if (mode === "screen") {
+          hudRes.innerText = "540x1200 (Écran)";
+        } else {
+          hudRes.innerText = "1280x720 (Caméra)";
+        }
+        isStreaming = true;
+      } else {
+        streamImg.src = "";
+        streamImg.classList.remove("visible");
+        standbyContainer.style.display = "flex";
+        hudOverlay.style.display = "none";
+        isStreaming = false;
+      }
+    }
+
+    function updateDockButtons(mode, active) {
+      btnScreen.classList.remove("active");
+      btnCamBack.classList.remove("active");
+      btnCamFront.classList.remove("active");
+
+      if (active) {
+        if (mode === "screen") btnScreen.classList.add("active");
+        if (mode === "camera_back") btnCamBack.classList.add("active");
+        if (mode === "camera_front") btnCamFront.classList.add("active");
+      }
+    }
+
+    function startStream(targetMode) {
+      showToast(`Connexion instantanée : ${targetMode}...`, "🚀");
+      activeMode = targetMode;
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.sendStreamCommand(targetMode);
+      }
+      if (currentStreamUrl) {
+        // Envoi immédiat de la requête, le serveur Android renvoie la 1ère frame en 30ms !
+        const freshUrl = currentStreamUrl + "?mode=" + targetMode + "&t=" + Date.now();
+        setStreamDisplay(true, targetMode, freshUrl);
+      }
+    }
+
+    function openInExternalBrowser() {
+      showToast("Ouverture dans le navigateur...", "🌐");
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.openInBrowser();
+      }
+    }
+
+    // Boucle de synchronisation non-bloquante avec Python (toutes les 700ms)
+    setInterval(async () => {
+      if (window.pywebview && window.pywebview.api) {
+        try {
+          const status = await window.pywebview.api.getStreamStatus();
+          if (status) {
+            onStatusReceived(status);
+          }
+        } catch (e) {}
+      }
+    }, 700);
+
+    function stopStream() {
+      showToast("Arrêt du flux demandé", "⏹");
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.sendStreamCommand("stop");
+      }
+      setStreamDisplay(false);
+    }
+
+    function takeSnapshot() {
+      if (!isStreaming) {
+        showToast("Aucun flux actif à capturer", "⚠️");
+        return;
+      }
+
+      // Déclenche l'effet flash photo blanc
+      flashOverlay.classList.add("trigger");
+      setTimeout(() => flashOverlay.classList.remove("trigger"), 80);
+
+      // Appelle Python pour sauvegarder l'image locale en PNG
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.captureSnapshot().then(path => {
+          if (path) {
+            showToast(`Capture enregistrée : ${path}`, "📸");
+          }
+        });
+      }
+    }
+
+    function promptManualIp() {
+      const defaultVal = manualPhoneIp || (currentStreamUrl ? new URL(currentStreamUrl).hostname : "192.168.1.");
+      const entered = prompt("Entrez l'adresse IP du Redmi A3 sur votre Wi-Fi :", defaultVal);
+      if (entered) {
+        manualPhoneIp = entered.trim();
+        showToast(`IP définie : ${manualPhoneIp}`, "⚙️");
+        if (window.pywebview && window.pywebview.api) {
+          window.pywebview.api.setManualIp(manualPhoneIp);
+        }
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Gestion des erreurs de chargement du flux MJPEG
+    streamImg.onerror = function() {
+      if (isStreaming) {
+        pulseDot.classList.remove("active");
+        txtConnection.innerText = "CONNEXION AU FLUX...";
+        setTimeout(() => {
+          if (isStreaming && currentStreamUrl) {
+            streamImg.src = currentStreamUrl + "?t=" + Date.now();
+          }
+        }, 2000);
+      }
+    };
+  </script>
+</body>
+</html>

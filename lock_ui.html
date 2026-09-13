@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostLock Shield</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            background-color: #05060b;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+            color: #ffffff;
+        }
+
+        /* ==================================================================== */
+        /* CALQUES DE FOND (TOUS EN POSITION FIXED POUR UN CENTRAGE ABSOLU)    */
+        /* ==================================================================== */
+
+        /* 1. Capture d'écran du vrai bureau Windows */
+        #realDesktopBg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('desktop_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+            pointer-events: none;
+            /* État par défaut flouté */
+            filter: blur(35px) brightness(0.35) saturate(1.3);
+            transform: scale(1.03);
+            transition: filter 2.4s cubic-bezier(0.16, 1, 0.3, 1), transform 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 2. Voile sombre dégradé d'ambiance */
+        #darkDimmer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 50%, rgba(10, 15, 30, 0.45) 0%, rgba(3, 5, 12, 0.8) 100%);
+            z-index: 2;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 3. Toile des particules flottantes */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 1.6s ease;
+        }
+
+        /* 4. Halo lumineux ambiant central */
+        .ambient-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 650px;
+            height: 650px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(56, 189, 248, 0.1) 45%, transparent 70%);
+            border-radius: 50%;
+            z-index: 4;
+            pointer-events: none;
+            filter: blur(50px);
+            opacity: 0.85;
+            animation: ambientPulse 4s ease-in-out infinite alternate;
+            transition: opacity 1.5s ease;
+        }
+
+        @keyframes ambientPulse {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.65; }
+            100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.95; }
+        }
+
+        /* ==================================================================== */
+        /* ÉTATS DU CYCLE DE VIE (MACHINE À ÉTATS DU CORPS)                     */
+        /* ==================================================================== */
+
+        /* 1. ÉTAT DE PRÉPARATION (Bureau 100% net au départ, aucun saut visuel) */
+        body.lock-prep #realDesktopBg {
+            filter: blur(0px) brightness(1.0) saturate(1.0) !important;
+            transform: scale(1.0) !important;
+            transition: none !important;
+        }
+
+        body.lock-prep #darkDimmer,
+        body.lock-prep #bgCanvas,
+        body.lock-prep .ambient-glow {
+            opacity: 0 !important;
+            transition: none !important;
+        }
+
+        body.lock-prep .lock-container {
+            opacity: 0 !important;
+            transform: translate(-50%, calc(-50% + 28px)) scale(0.88) !important;
+            filter: blur(20px) !important;
+            transition: none !important;
+        }
+
+        body.lock-prep #shackleGroup {
+            transform: translateY(-9px) rotate(-34deg) !important;
+            animation: none !important;
+        }
+
+        body.lock-prep #scanLaser,
+        body.lock-prep .unlock-shockwave,
+        body.lock-prep .locking-wave,
+        body.lock-prep .apple-vision-stage {
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+
+        /* 2. CINÉMATIQUE LENTE DE FERMETURE / VERROUILLAGE (~2.5s) */
+        body.locking #realDesktopBg {
+            filter: blur(35px) brightness(0.35) saturate(1.3) !important;
+            transform: scale(1.03) !important;
+            transition: filter 2.5s cubic-bezier(0.16, 1, 0.3, 1), transform 2.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        body.locking #darkDimmer {
+            opacity: 1 !important;
+            transition: opacity 2.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        body.locking #bgCanvas {
+            opacity: 1 !important;
+            transition: opacity 1.8s ease 0.3s !important;
+        }
+
+        body.locking .ambient-glow {
+            opacity: 0.85 !important;
+            transform: translate(-50%, -50%) scale(1.0) !important;
+            transition: opacity 2.0s ease, transform 2.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        body.locking .lock-container {
+            opacity: 1 !important;
+            transform: translate(-50%, -50%) scale(1.0) !important;
+            filter: blur(0px) !important;
+            transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, 
+                        transform 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, 
+                        filter 1.8s ease 0.3s !important;
+        }
+
+        /* 3. ÉTAT VERROUILLÉ PERMANENT (NE DISPARAÎT JAMAIS TANT QUE NON DÉVERROUILLÉ) */
+        body.locked #realDesktopBg {
+            filter: blur(35px) brightness(0.35) saturate(1.3);
+            transform: scale(1.03);
+        }
+
+        body.locked #darkDimmer {
+            opacity: 1;
+        }
+
+        body.locked #bgCanvas {
+            opacity: 1;
+        }
+
+        body.locked .ambient-glow {
+            opacity: 0.85;
+            transform: translate(-50%, -50%) scale(1.0);
+        }
+
+        body.locked .lock-container {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.0);
+            filter: blur(0px);
+            display: flex;
+        }
+
+        body.locked #shackleGroup {
+            transform: translateY(0) rotate(0deg);
+        }
+
+        /* 4. CINÉMATIQUE DE DÉVERROUILLAGE (DÉFLOUTAGE LENT VERS LE VRAI BUREAU) */
+        body.unlocking #realDesktopBg {
+            filter: blur(0px) brightness(1.0) saturate(1.0) !important;
+            transform: scale(1.0) !important;
+            transition: filter 2.4s cubic-bezier(0.16, 1, 0.3, 1), transform 2.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        body.unlocking #darkDimmer {
+            opacity: 0 !important;
+            transition: opacity 2.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        body.unlocking #bgCanvas {
+            opacity: 0 !important;
+            transition: opacity 1.6s ease !important;
+        }
+
+        body.unlocking .ambient-glow {
+            opacity: 0 !important;
+            transition: opacity 1.2s ease !important;
+        }
+
+        body.unlocking .lock-container {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        /* ==================================================================== */
+        /* ONDES DE CHOC CENTRALES                                              */
+        /* ==================================================================== */
+        .unlock-shockwave {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            margin-top: -60px;
+            margin-left: -60px;
+            border-radius: 50%;
+            border: 3px solid #34d399;
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.9), inset 0 0 30px rgba(52, 211, 153, 0.6);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+        }
+
+        .unlock-shockwave.active {
+            animation: shockwaveBoom 1.4s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
+        }
+
+        @keyframes shockwaveBoom {
+            0% { transform: scale(0.6); opacity: 1; border-width: 5px; }
+            40% { opacity: 0.85; border-color: #38bdf8; box-shadow: 0 0 70px rgba(56, 189, 248, 0.8); }
+            100% { transform: scale(26); opacity: 0; border-width: 1px; }
+        }
+
+        .locking-wave {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 110px;
+            height: 110px;
+            margin-top: -55px;
+            margin-left: -55px;
+            border-radius: 50%;
+            border: 3px solid #818cf8;
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.85), inset 0 0 15px rgba(129, 140, 248, 0.5);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 45;
+        }
+
+        .locking-wave.pulse {
+            animation: lockWavePulse 1.2s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
+        }
+
+        @keyframes lockWavePulse {
+            0% { transform: scale(0.6); opacity: 1; border-width: 4px; border-color: #818cf8; }
+            50% { opacity: 0.75; border-color: #38bdf8; box-shadow: 0 0 60px rgba(56, 189, 248, 0.7); }
+            100% { transform: scale(7.5); opacity: 0; border-width: 1px; }
+        }
+
+        /* ==================================================================== */
+        /* CONTENEUR DU VERROU (MATHÉMATIQUEMENT CENTRÉ EN TOUTES CIRCONSTANCES) */
+        /* ==================================================================== */
+        .lock-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 90vw;
+            max-width: 580px;
+            padding: 40px;
+            pointer-events: auto;
+            opacity: 1;
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), 
+                        filter 0.8s ease;
+        }
+
+        /* Radar & Cadenas Biométrique */
+        .shield-radar {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .radar-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(99, 102, 241, 0.35);
+            animation: radarPulse 3s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+            transition: opacity 0.5s ease;
+        }
+
+        .radar-ring:nth-child(1) { width: 140px; height: 140px; animation-delay: 0s; }
+        .radar-ring:nth-child(2) { width: 180px; height: 180px; animation-delay: 1s; border-color: rgba(56, 189, 248, 0.25); }
+        .radar-ring:nth-child(3) { width: 220px; height: 220px; animation-delay: 2s; border-color: rgba(99, 102, 241, 0.15); }
+
+        @keyframes radarPulse {
+            0% { transform: scale(0.85); opacity: 0.8; box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); }
+            50% { opacity: 0.4; box-shadow: 0 0 25px rgba(56, 189, 248, 0.3); }
+            100% { transform: scale(1.15); opacity: 0; }
+        }
+
+        /* Hub central Cadenas */
+        .lock-hub {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 2px solid rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 35px rgba(99, 102, 241, 0.3), inset 0 0 15px rgba(99, 102, 241, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            transition: all 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .lock-hub.unlocked {
+            border-color: #10b981;
+            box-shadow: 0 0 70px rgba(16, 185, 129, 0.85), 0 0 120px rgba(52, 211, 153, 0.45), inset 0 0 25px rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, rgba(6, 78, 59, 0.9) 0%, rgba(2, 44, 34, 0.98) 100%);
+            transform: scale(1.08);
+        }
+
+        /* Laser de scan */
+        .scan-laser {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #38bdf8, #818cf8, transparent);
+            box-shadow: 0 0 12px #38bdf8;
+            opacity: 0.85;
+            animation: laserScan 2.4s ease-in-out infinite alternate;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        @keyframes laserScan {
+            0% { top: 15%; opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { top: 85%; opacity: 0.3; }
+        }
+
+        /* SVG Cadenas */
+        .svg-icon {
+            width: 48px;
+            height: 48px;
+            fill: none;
+            stroke: #818cf8;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.4s ease, filter 0.4s ease;
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.6));
+            overflow: visible;
+        }
+
+        .unlocked .svg-icon {
+            stroke: #34d399;
+            filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.95));
+        }
+
+        /* Animation mécanique d'ouverture de l'anse */
+        #shackleGroup {
+            transform-origin: 7px 11px;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .unlocked #shackleGroup {
+            animation: shackleSpringPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes shackleSpringPop {
+            0% { transform: translateY(0) rotate(0deg); }
+            30% { transform: translateY(-8px) rotate(0deg); }
+            60% { transform: translateY(-10px) rotate(-14deg); }
+            100% { transform: translateY(-9px) rotate(-34deg); }
+        }
+
+        /* Animation mécanique de verrouillage / fermeture de l'anse */
+        .locking-snap #shackleGroup {
+            animation: shackleLockSnap 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.25) forwards !important;
+        }
+
+        @keyframes shackleLockSnap {
+            0% { transform: translateY(-9px) rotate(-34deg); }
+            40% { transform: translateY(-9px) rotate(0deg); }
+            70% { transform: translateY(3px) rotate(0deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        /* Textes */
+        .title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, #c7d2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #94a3b8;
+            font-weight: 500;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        /* Badge Clé Numérique */
+        .key-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(30, 36, 56, 0.65);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: 999px;
+            padding: 8px 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .key-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8;
+            animation: dotBlink 1.8s ease-in-out infinite;
+        }
+
+        @keyframes dotBlink {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .key-badge-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e7ff;
+            letter-spacing: 0.3px;
+        }
+
+        .footer-hint {
+            font-size: 12px;
+            font-style: italic;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #f43f5e;
+            animation: dotPulse 1.5s infinite;
+        }
+
+        @keyframes dotPulse {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 8px #f43f5e; }
+            100% { transform: scale(0.9); opacity: 0.5; }
+        }
+
+        /* ==================================================================== */
+        /* CINÉMATIQUE APPLE VISION PRO : "BIENVENUE" (SOYEUX, SANS AUCUN POP)  */
+        /* ==================================================================== */
+        .apple-vision-stage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 80;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.88);
+            transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 1.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        visibility 1.4s;
+        }
+
+        /* Apparition lente et somptueuse */
+        .apple-vision-stage.stage-visible {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: scale(1.0) !important;
+        }
+
+        /* Dissolution ultra-douce */
+        .apple-vision-stage.stage-dissolving {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transform: scale(1.08) !important;
+            filter: blur(14px) !important;
+            transition: opacity 1.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 1.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                        filter 1.3s ease, 
+                        visibility 1.3s !important;
+        }
+
+        /* Carte visionOS en verre spatial */
+        .vision-glass-card {
+            position: relative;
+            padding: 56px 84px;
+            border-radius: 42px;
+            background: radial-gradient(130% 130% at 50% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 65%, rgba(255, 255, 255, 0.02) 100%), rgba(11, 16, 32, 0.65);
+            backdrop-filter: blur(50px) saturate(220%);
+            -webkit-backdrop-filter: blur(50px) saturate(220%);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 
+                0 40px 100px rgba(0, 0, 0, 0.65),
+                0 0 120px rgba(99, 102, 241, 0.3),
+                inset 0 1.5px 2px rgba(255, 255, 255, 0.6),
+                inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 740px;
+        }
+
+        .apple-brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 6px 18px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #c7d2fe;
+            margin-bottom: 8px;
+        }
+
+        .apple-iris-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #34d399;
+            box-shadow: 0 0 12px #34d399;
+            animation: dotBlink 1.4s ease-in-out infinite;
+        }
+
+        .apple-welcome-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
+            font-size: 64px;
+            font-weight: 200;
+            letter-spacing: 0.32em;
+            text-indent: 0.32em;
+            text-transform: uppercase;
+            margin: 16px 0 16px 0;
+            background: linear-gradient(90deg, #ffffff 0%, #e2e8f0 25%, #6ee7b7 50%, #93c5fd 75%, #ffffff 100%);
+            background-size: 220% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: appleTextShine 3.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.4));
+        }
+
+        @keyframes appleTextShine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .apple-welcome-sub {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #cbd5e1;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+        }
+
+        .vision-check-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10b981;
+            color: #34d399;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Modal Saisie PIN Secrète */
+        .pin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 6, 12, 0.85);
+            backdrop-filter: blur(24px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .pin-modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .pin-card {
+            background: rgba(20, 27, 45, 0.85);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.25);
+            border-radius: 28px;
+            padding: 38px 48px;
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .pin-modal-overlay.active .pin-card {
+            transform: scale(1);
+        }
+
+        .pin-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .pin-subtitle {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 26px;
+        }
+
+        .pin-dots-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .pin-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            background: transparent;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .pin-dot.filled {
+            background: #818cf8;
+            border-color: #818cf8;
+            box-shadow: 0 0 12px rgba(129, 140, 248, 0.8);
+            transform: scale(1.15);
+        }
+
+        .pin-dot.error {
+            background: #f43f5e !important;
+            border-color: #f43f5e !important;
+            box-shadow: 0 0 14px #f43f5e !important;
+        }
+
+        .pin-dot.success {
+            background: #10b981 !important;
+            border-color: #34d399 !important;
+            box-shadow: 0 0 14px #10b981 !important;
+        }
+
+        #hiddenPinInput {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pin-hint {
+            font-size: 11px;
+            color: #64748b;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @keyframes shakeCard {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-12px); }
+            40%, 80% { transform: translateX(12px); }
+        }
+
+        .shake {
+            animation: shakeCard 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Vrai bureau Windows capturé au moment du verrouillage -->
+    <div id="realDesktopBg"></div>
+    <!-- 2. Voile sombre d'ambiance visionOS -->
+    <div id="darkDimmer"></div>
+    <!-- 3. Particules & halos -->
+    <canvas id="bgCanvas"></canvas>
+    <div class="ambient-glow"></div>
+
+    <!-- Onde de choc spatiale au déverrouillage -->
+    <div class="unlock-shockwave" id="unlockShockwave"></div>
+    <!-- Onde de choc au verrouillage -->
+    <div class="locking-wave" id="lockingWave"></div>
+
+    <!-- Conteneur Principal du Verrou (Centré à 100%) -->
+    <div class="lock-container" id="mainContainer">
+        
+        <!-- Radar & Hub Central -->
+        <div class="shield-radar">
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            
+            <div class="lock-hub" id="lockHub">
+                <div class="scan-laser" id="scanLaser"></div>
+                
+                <!-- SVG Cadenas Haute Définition avec Anse Mécanique Dynamique -->
+                <svg class="svg-icon" id="lockSvg" viewBox="0 0 24 24">
+                    <g id="shackleGroup">
+                        <path id="shacklePath" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </g>
+                    <rect id="lockBody" x="3" y="11" width="18" height="11" rx="2.5" ry="2.5"></rect>
+                    <circle cx="12" cy="16.5" r="1.6" fill="#818cf8"></circle>
+                    <path d="M12 17.5v2" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Titres & Textes -->
+        <div class="title" id="txtTitle">Accès PC Verrouillé</div>
+        <div class="subtitle" id="txtSubtitle">Vérification biométrique requise sur votre Redmi A3</div>
+
+        <!-- Badge Téléphone -->
+        <div class="key-badge">
+            <div class="key-badge-dot"></div>
+            <span class="key-badge-text">📱 Clé Numérique : Redmi A3</span>
+        </div>
+
+        <div class="footer-hint" id="footerHint">
+            <div class="pulse-dot"></div>
+            <span>En attente de votre empreinte sur le capteur latéral...</span>
+        </div>
+    </div>
+
+    <!-- Cinématique Apple Vision Pro : "BIENVENUE" -->
+    <div class="apple-vision-stage" id="appleVisionStage">
+        <div class="vision-glass-card" id="visionGlassCard">
+            <div class="apple-brand-badge">
+                <span class="apple-iris-dot"></span>
+                <span>AUTHENTIFIÉ</span>
+            </div>
+            
+            <h1 class="apple-welcome-text">BIENVENUE</h1>
+            
+            <div class="apple-welcome-sub">
+                <span class="vision-check-icon">✓</span>
+                <span>Identité biométrique validée • Session prête</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Secrète Code PIN (Ctrl + Shift + Alt + U) -->
+    <div class="pin-modal-overlay" id="pinModal">
+        <div class="pin-card" id="pinCard">
+            <div class="pin-title">Authentification Secrète</div>
+            <div class="pin-subtitle">Saisissez le code maître</div>
+            
+            <div class="pin-dots-row">
+                <div class="pin-dot" id="dot0"></div>
+                <div class="pin-dot" id="dot1"></div>
+                <div class="pin-dot" id="dot2"></div>
+                <div class="pin-dot" id="dot3"></div>
+            </div>
+
+            <input type="password" id="hiddenPinInput" maxlength="4" autofocus autocomplete="off">
+
+            <div class="pin-hint">Appuyez sur [Échap] pour fermer</div>
+        </div>
+    </div>
+
+    <script>
+        // ====================================================================
+        // GESTION DU CANVAS PARTICULES (60 FPS FLUIDE)
+        // ====================================================================
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const PARTICLE_COUNT = 50;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.8;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.alpha = Math.random() * 0.5 + 0.15;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(129, 140, 248, ${this.alpha})`;
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ====================================================================
+        // ÉLÉMENTS DOM & ACTIONS DE TRANSITION
+        // ====================================================================
+        const realDesktopBg = document.getElementById('realDesktopBg');
+        const lockHub = document.getElementById('lockHub');
+        const mainContainer = document.getElementById('mainContainer');
+        const txtTitle = document.getElementById('txtTitle');
+        const txtSubtitle = document.getElementById('txtSubtitle');
+        const footerHint = document.getElementById('footerHint');
+        const scanLaser = document.getElementById('scanLaser');
+        const shockwave = document.getElementById('unlockShockwave');
+        const lockingWave = document.getElementById('lockingWave');
+        const appleVisionStage = document.getElementById('appleVisionStage');
+        const shackleGroup = document.getElementById('shackleGroup');
+
+        // Préparation instantanée du verrouillage (bureau 100% net au départ, aucun saut visuel)
+        function prepareLock() {
+            document.body.className = 'lock-prep';
+            if (realDesktopBg) {
+                realDesktopBg.style.backgroundImage = "url('desktop_bg.jpg?t=" + Date.now() + "')";
+            }
+            if (mainContainer) {
+                mainContainer.removeAttribute('style');
+            }
+            if (shackleGroup) {
+                shackleGroup.removeAttribute('style');
+            }
+            lockHub.classList.remove('unlocked', 'locking-snap');
+            scanLaser.style.display = 'none';
+            if (lockingWave) {
+                lockingWave.classList.remove('pulse');
+                lockingWave.style.display = 'none';
+            }
+            if (shockwave) {
+                shockwave.classList.remove('active');
+                shockwave.style.display = 'none';
+            }
+            if (appleVisionStage) {
+                appleVisionStage.classList.remove('stage-visible', 'stage-dissolving');
+            }
+            closePinModal();
+        }
+
+        // Lancement de la cinématique lente de fermeture / flou spatial (~2.5s)
+        function triggerLock() {
+            document.body.className = 'locking';
+
+            txtTitle.innerText = "Accès PC Verrouillé";
+            txtTitle.style.background = "linear-gradient(135deg, #ffffff 40%, #c7d2fe 100%)";
+            txtTitle.style.webkitBackgroundClip = "text";
+            txtSubtitle.innerText = "Vérification biométrique requise sur votre Redmi A3";
+            footerHint.style.display = "flex";
+
+            // À 0.85s : L'anse descend et se verrouille mécaniquement avec ressort
+            setTimeout(() => {
+                lockHub.classList.add('locking-snap');
+            }, 850);
+
+            // À 1.25s : Onde de choc d'impact et laser actif
+            setTimeout(() => {
+                if (lockingWave) {
+                    lockingWave.style.display = 'block';
+                    lockingWave.classList.remove('pulse');
+                    void lockingWave.offsetWidth;
+                    lockingWave.classList.add('pulse');
+                }
+                scanLaser.style.display = 'block';
+            }, 1250);
+
+            // À 2.5s : Stabilisation dans l'état verrouillé PERMANENT (ne disparaît jamais !)
+            setTimeout(() => {
+                document.body.className = 'locked';
+                lockHub.classList.remove('locking-snap');
+            }, 2500);
+        }
+
+        // Cinématique Apple Vision Pro de déverrouillage (6.4s total)
+        function triggerUnlock() {
+            closePinModal();
+
+            // Phase 1 (0.0s) : Ouverture mécanique du cadenas & Onde de choc verte
+            lockHub.classList.remove('locking-snap');
+            lockHub.classList.add('unlocked');
+            scanLaser.style.display = 'none';
+
+            if (lockingWave) {
+                lockingWave.style.display = 'none';
+            }
+
+            if (shockwave) {
+                shockwave.style.display = 'block';
+                shockwave.classList.remove('active');
+                void shockwave.offsetWidth;
+                shockwave.classList.add('active');
+            }
+
+            // Phase 2 (0.75s) : Le cadenas s'élève doucement et se dissout dans un flou
+            setTimeout(() => {
+                if (mainContainer) {
+                    mainContainer.style.transition = 'opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.85s ease';
+                    mainContainer.style.opacity = '0';
+                    mainContainer.style.transform = 'translate(-50%, calc(-50% - 40px)) scale(0.92)';
+                    mainContainer.style.filter = 'blur(16px)';
+                }
+            }, 750);
+
+            // Phase 3 (1.5s -> 3.8s) : Apparition ULTRA-SOYEUSE et progressive de "BIENVENUE" (1.4s de transition)
+            setTimeout(() => {
+                if (shockwave) {
+                    shockwave.style.display = 'none';
+                    shockwave.classList.remove('active');
+                }
+                if (appleVisionStage) {
+                    appleVisionStage.classList.remove('stage-dissolving');
+                    appleVisionStage.classList.add('stage-visible');
+                }
+            }, 1500);
+
+            // Phase 4 (3.8s -> 6.2s) : Dissolution douce de la carte et Défloutage LENT du vrai bureau Windows (2.4s)
+            setTimeout(() => {
+                if (appleVisionStage) {
+                    appleVisionStage.classList.remove('stage-visible');
+                    appleVisionStage.classList.add('stage-dissolving');
+                }
+                document.body.className = 'unlocking';
+            }, 3800);
+
+            // Phase 5 (5.2s) : Fin de la dissolution de la carte Vision Pro
+            setTimeout(() => {
+                if (appleVisionStage) {
+                    appleVisionStage.classList.remove('stage-visible', 'stage-dissolving');
+                }
+            }, 5200);
+        }
+
+        // ====================================================================
+        // MODAL CODE PIN SECRÈTE (Ctrl + Shift + Alt + U)
+        // ====================================================================
+        const pinModal = document.getElementById('pinModal');
+        const pinCard = document.getElementById('pinCard');
+        const hiddenPinInput = document.getElementById('hiddenPinInput');
+        const dots = [
+            document.getElementById('dot0'),
+            document.getElementById('dot1'),
+            document.getElementById('dot2'),
+            document.getElementById('dot3')
+        ];
+
+        function openPinModal() {
+            pinModal.classList.add('active');
+            hiddenPinInput.value = "";
+            updateDots();
+            setTimeout(() => hiddenPinInput.focus(), 50);
+        }
+
+        function closePinModal() {
+            pinModal.classList.remove('active');
+            hiddenPinInput.value = "";
+            updateDots();
+            hiddenPinInput.blur();
+        }
+
+        function updateDots() {
+            const len = hiddenPinInput.value.length;
+            dots.forEach((dot, idx) => {
+                dot.className = 'pin-dot' + (idx < len ? ' filled' : '');
+            });
+        }
+
+        hiddenPinInput.addEventListener('input', () => {
+            updateDots();
+            if (hiddenPinInput.value.length === 4) {
+                submitPin(hiddenPinInput.value);
+            }
+        });
+
+        pinCard.addEventListener('click', () => {
+            hiddenPinInput.focus();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && pinModal.classList.contains('active')) {
+                closePinModal();
+            }
+        });
+
+        function submitPin(pin) {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.verify_pin(pin).then(isValid => {
+                    handlePinResult(isValid);
+                });
+            } else {
+                handlePinResult(pin === "1234");
+            }
+        }
+
+        function handlePinResult(isValid) {
+            if (isValid) {
+                dots.forEach(d => d.className = 'pin-dot success');
+                triggerUnlock();
+            } else {
+                dots.forEach(d => d.className = 'pin-dot error');
+                pinCard.classList.add('shake');
+                setTimeout(() => {
+                    pinCard.classList.remove('shake');
+                    hiddenPinInput.value = "";
+                    updateDots();
+                }, 600);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'U' || e.key === 'u')) {
+                openPinModal();
+            }
+        });
+    </script>
+</body>
+</html>
