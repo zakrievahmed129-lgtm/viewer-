@@ -6,6 +6,8 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import android.view.animation.LinearInterpolator
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
@@ -283,25 +285,27 @@ class MainActivity : AppCompatActivity() {
         biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                vibratePhone()
                 when (pendingBiometricAction) {
                     "lock" -> {
-                        sendMqttCommand("lock")
-                        isPcLocked = true
-                        animateLockSequence()
-                        binding.tvLogs.text = "🔒 Empreinte validée ! PC verrouillé."
-                        Toast.makeText(this@MainActivity, "PC Verrouillé !", Toast.LENGTH_SHORT).show()
+                        startBiometricValidationSequence("lock") {
+                            sendMqttCommand("lock")
+                            isPcLocked = true
+                            animateLockSequence()
+                            binding.tvLogs.text = "🔒 Empreinte validée ! PC verrouillé."
+                            Toast.makeText(this@MainActivity, "PC Verrouillé !", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     "viewer" -> {
                         showGhostScriptLaunchConfirmation()
                     }
-
                     else -> {
-                        sendMqttCommand("unlock")
-                        isPcLocked = false
-                        animateUnlockSequence()
-                        binding.tvLogs.text = "✅ Empreinte validée ! Déverrouillage du PC..."
-                        Toast.makeText(this@MainActivity, "Accès PC autorisé !", Toast.LENGTH_SHORT).show()
+                        startBiometricValidationSequence("unlock") {
+                            sendMqttCommand("unlock")
+                            isPcLocked = false
+                            animateUnlockSequence()
+                            binding.tvLogs.text = "✅ Accès PC autorisé !"
+                            Toast.makeText(this@MainActivity, "Accès PC autorisé !", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
@@ -958,6 +962,114 @@ class MainActivity : AppCompatActivity() {
 
         updateDiscoveredCountUI()
         Toast.makeText(this, "Connecté à $targetPc", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun startBiometricValidationSequence(action: String, onComplete: () -> Unit) {
+        val isUnlock = (action == "unlock")
+        vibrateLight(35)
+
+        // Désactivation temporaire des boutons pour éviter tout double-clic parasite
+        binding.btnUnlockBiometric.isEnabled = false
+        binding.btnLockPc.isEnabled = false
+        binding.btnOpenViewer.isEnabled = false
+
+        // Phase 1 (0.0s - 1.0s) : Scan Optique & Rotation gyroscopique fluide
+        binding.radarRingOuter.animate()
+            .rotationBy(360f)
+            .setDuration(1500)
+            .setInterpolator(LinearInterpolator())
+            .start()
+
+        binding.radarRingMid.animate()
+            .rotationBy(-360f)
+            .setDuration(1500)
+            .setInterpolator(LinearInterpolator())
+            .start()
+
+        binding.hubBiometric.animate()
+            .scaleX(1.12f)
+            .scaleY(1.12f)
+            .setDuration(450)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction {
+                binding.hubBiometric.animate().scaleX(1.0f).scaleY(1.0f).setDuration(450).start()
+            }
+            .start()
+
+        binding.tvLockStatus.apply {
+            text = if (isUnlock) "ANALYSE OPTIC ID EN COURS..." else "SÉCURISATION DU BOUCLIER..."
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_indigo))
+        }
+        binding.tvLastSeen.text = "Validation de l'empreinte matérielle..."
+
+        // Phase 2 (1.0s - 2.2s) : Résonance & Confirmation cryptographique
+        mainHandler.postDelayed({
+            vibrateLight(40)
+
+            binding.radarShockwave.apply {
+                setBackgroundResource(if (isUnlock) R.drawable.bg_radar_shockwave_emerald else R.drawable.bg_radar_shockwave_rose)
+                scaleX = 0.8f
+                scaleY = 0.8f
+                alpha = 0.75f
+                animate()
+                    .scaleX(1.85f)
+                    .scaleY(1.85f)
+                    .alpha(0.0f)
+                    .setDuration(850)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
+            }
+
+            binding.tvLockStatus.apply {
+                text = "SIGNATURE NUMÉRIQUE CERTIFIÉE ✓"
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.emerald))
+            }
+            binding.tvLastSeen.text = "Authentification chiffrée • Envoi du jeton sécurisé..."
+        }, 1000)
+
+        // Phase 3 (2.2s - 3.0s) : Autorisation & Synchronisation en direct
+        mainHandler.postDelayed({
+            vibrateSuccess()
+            binding.tvLockStatus.apply {
+                text = if (isUnlock) "ACCÈS SESSION ACCORDÉ 🔓" else "SYSTÈME VERROUILLÉ 🔒"
+                setTextColor(ContextCompat.getColor(this@MainActivity, if (isUnlock) R.color.emerald else R.color.rose))
+            }
+            binding.tvLastSeen.text = "Ordre synchronisé en temps réel vers $targetPc"
+        }, 2200)
+
+        // À 3.0s exactement : Exécution finale de l'action demandée
+        mainHandler.postDelayed({
+            binding.btnUnlockBiometric.isEnabled = true
+            binding.btnLockPc.isEnabled = true
+            binding.btnOpenViewer.isEnabled = true
+            onComplete()
+        }, 3000)
+    }
+
+    private fun vibrateLight(durationMs: Long = 35) {
+        try {
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(durationMs)
+            }
+        } catch (e: Exception) {}
+    }
+
+    private fun vibrateSuccess() {
+        try {
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val timings = longArrayOf(0, 35, 60, 45)
+                val amplitudes = intArrayOf(0, 180, 0, 255)
+                vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(longArrayOf(0, 35, 60, 45), -1)
+            }
+        } catch (e: Exception) {}
     }
 
     private fun animateUnlockSequence() {

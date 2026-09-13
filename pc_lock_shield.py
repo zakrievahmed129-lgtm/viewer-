@@ -821,18 +821,19 @@ class BiometricLockShield:
 
 
     def _delayed_hide(self):
-        # À 5.5s : Restauration des contrôles système alors que le bureau est quasiment net à 95%
-        time.sleep(5.5)
+        # Validation biométrique haute précision (3.0s) + Stage Apple Vision Pro (3.8s) + Défloutage LENT (2.4s)
+        # À 8.5s : Restauration des contrôles système alors que le bureau est quasiment net à 95%
+        time.sleep(8.5)
         uninstall_keyboard_lock()
         set_taskbar_visible(True)
         set_taskmgr_disabled(False)
         
-        # À 6.4s : Le bureau est à 100% net (2.4s de défloutage après 3.8s de cinématique), masquage 100% invisible
+        # À 9.4s : Le bureau est à 100% net, masquage 100% invisible
         time.sleep(0.9)
         if not self.is_locked and self.window:
             try:
                 self.window.hide()
-                log("[OK] Bureau Windows révélé en netteté (cinématique longue 6.4s terminée) sans coupure.")
+                log("[OK] Bureau Windows révélé en netteté (validation 3s + cinématique Vision Pro terminée) sans coupure.")
             except Exception:
                 pass
 

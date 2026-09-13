@@ -620,11 +620,165 @@
             animation: shackleLockSnap 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.25) forwards !important;
         }
 
-        @keyframes shackleLockSnap {
-            0% { transform: translateY(-11px) rotate(-34deg); }
-            45% { transform: translateY(-11px) rotate(0deg); }
-            75% { transform: translateY(3px) rotate(0deg); }
-            100% { transform: translateY(0) rotate(0deg); }
+        /* ==================================================================== */
+        /* RÉTICULE BIOMÉTRIQUE OPTIC ID DE POINTE (Apple / visionOS Style)    */
+        /* ==================================================================== */
+        .optic-reticle {
+            position: absolute;
+            width: 136px;
+            height: 136px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            opacity: 0;
+            transform: scale(1.18);
+            transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.biometric-validating .optic-reticle {
+            opacity: 1;
+            transform: scale(1.0);
+        }
+
+        .reticle-corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            pointer-events: none;
+            transition: all 0.4s ease;
+        }
+
+        .reticle-tl {
+            top: 2px;
+            left: 2px;
+            border-top: 2px solid rgba(56, 189, 248, 0.9);
+            border-left: 2px solid rgba(56, 189, 248, 0.9);
+            border-top-left-radius: 5px;
+        }
+
+        .reticle-tr {
+            top: 2px;
+            right: 2px;
+            border-top: 2px solid rgba(56, 189, 248, 0.9);
+            border-right: 2px solid rgba(56, 189, 248, 0.9);
+            border-top-right-radius: 5px;
+        }
+
+        .reticle-bl {
+            bottom: 2px;
+            left: 2px;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.9);
+            border-left: 2px solid rgba(56, 189, 248, 0.9);
+            border-bottom-left-radius: 5px;
+        }
+
+        .reticle-br {
+            bottom: 2px;
+            right: 2px;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.9);
+            border-right: 2px solid rgba(56, 189, 248, 0.9);
+            border-bottom-right-radius: 5px;
+        }
+
+        body.biometric-validating .reticle-corner {
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.85));
+            animation: reticleBreath 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes reticleBreath {
+            0% { transform: scale(0.96); border-color: rgba(56, 189, 248, 0.85); }
+            100% { transform: scale(1.05); border-color: rgba(16, 185, 129, 0.95); }
+        }
+
+        .reticle-progress-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .reticle-circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 2px;
+        }
+
+        .reticle-circle-fill {
+            fill: none;
+            stroke: url(#opticProgressGrad);
+            stroke-width: 2.8px;
+            stroke-linecap: round;
+            stroke-dasharray: 364.425;
+            stroke-dashoffset: 364.425;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.85));
+        }
+
+        /* Onde de résonance concentrique optique lors de la validation à t=1.2s */
+        .bio-resonance-pulse {
+            position: absolute;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            border: 2px solid #10b981;
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.85), inset 0 0 20px rgba(52, 211, 153, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .bio-resonance-pulse.pulse {
+            animation: bioPulseWave 1.35s cubic-bezier(0.12, 0.88, 0.25, 1) forwards;
+        }
+
+        @keyframes bioPulseWave {
+            0% { transform: scale(0.85); opacity: 0.95; border-width: 3.5px; }
+            45% { opacity: 0.8; border-color: #38bdf8; box-shadow: 0 0 60px rgba(56, 189, 248, 0.85); }
+            100% { transform: scale(2.4); opacity: 0; border-width: 0.5px; }
+        }
+
+        /* Dynamique gyroscopique accélérée pendant la validation 3s */
+        body.biometric-validating .gyro-ring-1 {
+            border-color: rgba(56, 189, 248, 0.75);
+            box-shadow: 0 0 35px rgba(56, 189, 248, 0.45);
+            animation: ringRotate3D1 2.2s linear infinite, ringPulseBio 1.5s ease-in-out infinite alternate !important;
+        }
+
+        body.biometric-validating .gyro-ring-2 {
+            border-top-color: #10b981;
+            border-bottom-color: #38bdf8;
+            box-shadow: 0 0 45px rgba(16, 185, 129, 0.45);
+            animation: ringRotate3D2 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+        }
+
+        body.biometric-validating .gyro-ring-3 {
+            border-color: rgba(255, 255, 255, 0.55);
+            animation: ringPulseBio 1.0s ease-in-out infinite alternate !important;
+        }
+
+        body.biometric-validating .lock-hub {
+            border-color: rgba(56, 189, 248, 0.85);
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.55), inset 0 0 25px rgba(56, 189, 248, 0.35);
+        }
+
+        body.biometric-validating .scan-laser {
+            display: block !important;
+            background: linear-gradient(90deg, transparent, #10b981 35%, #ffffff 50%, #38bdf8 65%, transparent) !important;
+            box-shadow: 0 0 20px #10b981, 0 0 30px #38bdf8 !important;
+            animation: laserScanFast 1.1s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes laserScanFast {
+            0% { top: 12%; opacity: 0.35; }
+            50% { opacity: 1; }
+            100% { top: 88%; opacity: 0.35; }
+        }
+
+        @keyframes ringPulseBio {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            100% { transform: scale(1.08); opacity: 0.95; box-shadow: 0 0 35px rgba(56, 189, 248, 0.6); }
         }
 
         /* ==================================================================== */
@@ -1176,6 +1330,26 @@
                 <div class="gyro-ring gyro-ring-2"></div>
                 <div class="gyro-ring gyro-ring-3"></div>
                 
+                <!-- Réticule Biométrique Optic ID & Jauge Circulaire 3.0s -->
+                <div class="optic-reticle" id="opticReticle">
+                    <div class="reticle-corner reticle-tl"></div>
+                    <div class="reticle-corner reticle-tr"></div>
+                    <div class="reticle-corner reticle-bl"></div>
+                    <div class="reticle-corner reticle-br"></div>
+                    <svg class="reticle-progress-svg" viewBox="0 0 130 130">
+                        <defs>
+                            <linearGradient id="opticProgressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#38bdf8" />
+                                <stop offset="50%" stop-color="#818cf8" />
+                                <stop offset="100%" stop-color="#10b981" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="reticle-circle-bg" cx="65" cy="65" r="58" />
+                        <circle class="reticle-circle-fill" id="reticleCircleFill" cx="65" cy="65" r="58" />
+                    </svg>
+                    <div class="bio-resonance-pulse" id="bioResonancePulse"></div>
+                </div>
+
                 <div class="lock-hub" id="lockHub" onclick="togglePinModal()" title="Cliquer pour saisir le code PIN de secours (Échap)">
                     <div class="scan-laser" id="scanLaser"></div>
                     
@@ -1488,9 +1662,13 @@
         const spatialAperture = document.getElementById('spatialAperture');
         const sheenSweep = document.getElementById('sheenSweep');
 
+        let isUnlocking = false;
+
         // Préparation instantanée (35ms) sans saut visuel
         function prepareLock() {
+            isUnlocking = false;
             document.body.className = 'lock-prep';
+            document.body.classList.remove('biometric-validating');
             if (realDesktopBg) {
                 realDesktopBg.style.backgroundImage = "url('desktop_bg.jpg?t=" + Date.now() + "')";
             }
@@ -1503,6 +1681,15 @@
             }
             lockHub.classList.remove('unlocked', 'locking-snap');
             scanLaser.style.display = 'none';
+
+            const fillCircle = document.getElementById('reticleCircleFill');
+            if (fillCircle) {
+                fillCircle.style.transition = 'none';
+                fillCircle.style.strokeDashoffset = '364.425';
+            }
+            const resonance = document.getElementById('bioResonancePulse');
+            if (resonance) resonance.classList.remove('pulse');
+
             if (lockingWave) {
                 lockingWave.classList.remove('pulse');
                 lockingWave.style.display = 'none';
@@ -1523,12 +1710,25 @@
 
         // Lancement de la cinématique d'apparition / fermeture (~2.5s)
         function triggerLock() {
+            isUnlocking = false;
             closePinModal();
             document.body.className = 'locking';
+            document.body.classList.remove('biometric-validating');
 
             txtTitle.innerText = "Accès PC Verrouillé";
             txtSubtitle.innerText = "Vérification biométrique requise sur votre Redmi A3";
             footerHint.style.display = "flex";
+
+            const keyBadgeText = document.querySelector('.key-badge-text');
+            if (keyBadgeText) keyBadgeText.innerText = "📱 Clé Numérique • Redmi A3";
+
+            const fillCircle = document.getElementById('reticleCircleFill');
+            if (fillCircle) {
+                fillCircle.style.transition = 'none';
+                fillCircle.style.strokeDashoffset = '364.425';
+            }
+            const resonance = document.getElementById('bioResonancePulse');
+            if (resonance) resonance.classList.remove('pulse');
 
             // Phase 1 : Flash et ouverture d'iris spatiale
             if (spatialAperture) {
@@ -1568,69 +1768,127 @@
             }, 2500);
         }
 
-        // Cinématique de disparition / Déverrouillage Biométrique Ethereal (6.2s)
+        // ====================================================================
+        // CINÉMATIQUE DE DÉVERROUILLAGE BIOMÉTRIQUE SPATIAL (VALIDATION 3.0s)
+        // ====================================================================
         function triggerUnlock() {
+            if (isUnlocking) return;
+            isUnlocking = true;
             closePinModal();
 
-            // Phase 1 (0.0s) : Ouverture mécanique du cadenas & Double onde de choc
-            lockHub.classList.remove('locking-snap');
-            lockHub.classList.add('unlocked');
-            scanLaser.style.display = 'none';
+            // ----------------------------------------------------------------
+            // PHASE 1 (0.0s -> 3.0s) : VALIDATION BIOMÉTRIQUE HAUTE PRÉCISION
+            // ----------------------------------------------------------------
+            document.body.classList.add('biometric-validating');
+            
+            // 0.0s - 1.2s : Scan Optic ID & accélération gyroscopique
+            txtTitle.innerText = "AUTHENTIFICATION BIOMÉTRIQUE";
+            txtSubtitle.innerText = "Lecture biométrique de pointe en cours sur Redmi A3...";
+            footerHint.style.display = "none";
 
-            if (lockingWave) {
-                lockingWave.style.display = 'none';
+            const keyBadgeText = document.querySelector('.key-badge-text');
+            if (keyBadgeText) keyBadgeText.innerText = "✨ Optic ID • Calibrage spatial";
+
+            // Démarrage de la jauge circulaire 3.0s ultra-précise
+            const fillCircle = document.getElementById('reticleCircleFill');
+            if (fillCircle) {
+                fillCircle.style.transition = 'none';
+                fillCircle.style.strokeDashoffset = '364.425';
+                void fillCircle.offsetWidth;
+                fillCircle.style.transition = 'stroke-dashoffset 3.0s cubic-bezier(0.16, 1, 0.3, 1)';
+                fillCircle.style.strokeDashoffset = '0';
             }
 
-            if (shockwave1) {
-                shockwave1.style.display = 'block';
-                shockwave1.classList.remove('active');
-                void shockwave1.offsetWidth;
-                shockwave1.classList.add('active');
-            }
-
-            if (shockwave2) {
-                shockwave2.style.display = 'block';
-                shockwave2.classList.remove('active');
-                void shockwave2.offsetWidth;
-                shockwave2.classList.add('active');
-            }
-
-            // Explosion de poussières d'étoiles stardust sur le canvas
-            triggerUnlockParticleBurst();
-
-            // Phase 2 (0.65s) : Dissolution optique de la carte principale
+            // 1.2s - 2.4s : Certification cryptographique matérielle & pulsation optique
             setTimeout(() => {
-                if (spatialWrapper) {
-                    spatialWrapper.classList.add('dissolving');
-                }
-            }, 650);
+                txtTitle.innerText = "SIGNATURE BIOMÉTRIQUE CONFIRMÉE ✓";
+                txtSubtitle.innerText = "Certificat matériel certifié par Redmi A3";
+                if (keyBadgeText) keyBadgeText.innerText = "🔒 Signature Matérielle Validée";
 
-            // Phase 3 (1.4s -> 3.8s) : Apparition progressive et soyeuse de "BIENVENUE"
+                // Onde de résonance concentrique optique
+                const resonance = document.getElementById('bioResonancePulse');
+                if (resonance) {
+                    resonance.classList.remove('pulse');
+                    void resonance.offsetWidth;
+                    resonance.classList.add('pulse');
+                }
+            }, 1200);
+
+            // 2.4s - 3.0s : Autorisation accordée & ouverture physique de l'anse
             setTimeout(() => {
-                if (shockwave1) shockwave1.style.display = 'none';
-                if (shockwave2) shockwave2.style.display = 'none';
+                txtTitle.innerText = "ACCÈS SESSION ACCORDÉ 🔓";
+                txtSubtitle.innerText = "Ouverture de votre session Windows...";
+                if (keyBadgeText) keyBadgeText.innerText = "✨ Session Windows Autorisée";
 
-                if (appleVisionStage) {
-                    appleVisionStage.classList.remove('stage-dissolving');
-                    appleVisionStage.classList.add('stage-visible');
-                }
-            }, 1400);
+                lockHub.classList.remove('locking-snap');
+                lockHub.classList.add('unlocked');
+            }, 2400);
 
-            // Phase 4 (3.8s -> 6.2s) : Dissipation de la carte et Défloutage LENT du vrai bureau Windows
+            // ----------------------------------------------------------------
+            // PHASE 2 (3.0s PILE) : FIN DE VALIDATION & DISSOLUTION SPATIALE
+            // ----------------------------------------------------------------
             setTimeout(() => {
-                if (appleVisionStage) {
-                    appleVisionStage.classList.remove('stage-visible');
-                    appleVisionStage.classList.add('stage-dissolving');
-                }
-                document.body.className = 'unlocking';
-            }, 3800);
+                document.body.classList.remove('biometric-validating');
+                scanLaser.style.display = 'none';
 
-            // Phase 5 (5.2s) : Nettoyage final
-            setTimeout(() => {
-                if (appleVisionStage) {
-                    appleVisionStage.classList.remove('stage-visible', 'stage-dissolving');
+                if (lockingWave) {
+                    lockingWave.style.display = 'none';
                 }
-            }, 5200);
+
+                // Double onde de choc spectrale
+                if (shockwave1) {
+                    shockwave1.style.display = 'block';
+                    shockwave1.classList.remove('active');
+                    void shockwave1.offsetWidth;
+                    shockwave1.classList.add('active');
+                }
+
+                if (shockwave2) {
+                    shockwave2.style.display = 'block';
+                    shockwave2.classList.remove('active');
+                    void shockwave2.offsetWidth;
+                    shockwave2.classList.add('active');
+                }
+
+                // Explosion de poussières d'étoiles stardust sur le canvas
+                triggerUnlockParticleBurst();
+
+                // 3.65s (+0.65s après validation) : Dissolution optique de la carte principale
+                setTimeout(() => {
+                    if (spatialWrapper) {
+                        spatialWrapper.classList.add('dissolving');
+                    }
+                }, 650);
+
+                // 4.4s (+1.4s après validation) : Apparition progressive et soyeuse de "BIENVENUE"
+                setTimeout(() => {
+                    if (shockwave1) shockwave1.style.display = 'none';
+                    if (shockwave2) shockwave2.style.display = 'none';
+
+                    if (appleVisionStage) {
+                        appleVisionStage.classList.remove('stage-dissolving');
+                        appleVisionStage.classList.add('stage-visible');
+                    }
+                }, 1400);
+
+                // 6.8s (+3.8s après validation) : Dissipation de la carte et Défloutage LENT du vrai bureau Windows
+                setTimeout(() => {
+                    if (appleVisionStage) {
+                        appleVisionStage.classList.remove('stage-visible');
+                        appleVisionStage.classList.add('stage-dissolving');
+                    }
+                    document.body.className = 'unlocking';
+                }, 3800);
+
+                // 8.2s (+5.2s après validation) : Nettoyage final
+                setTimeout(() => {
+                    if (appleVisionStage) {
+                        appleVisionStage.classList.remove('stage-visible', 'stage-dissolving');
+                    }
+                    isUnlocking = false;
+                }, 5200);
+
+            }, 3000); // EXACTEMENT 3.0s de validation biométrique avant dissolution
         }
 
         // ====================================================================
