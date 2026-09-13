@@ -535,18 +535,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
+            cursor: default;
             z-index: 2;
             transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .lock-hub:hover {
-            transform: scale(1.08);
-            border-color: rgba(255, 255, 255, 0.6);
-            box-shadow: 
-                0 20px 45px rgba(0, 0, 0, 0.6),
-                0 0 45px rgba(129, 140, 248, 0.6),
-                inset 0 2px 3px rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.35);
         }
 
         .lock-hub.unlocked {
@@ -1350,7 +1345,7 @@
                     <div class="bio-resonance-pulse" id="bioResonancePulse"></div>
                 </div>
 
-                <div class="lock-hub" id="lockHub" onclick="togglePinModal()" title="Cliquer pour saisir le code PIN de secours (Échap)">
+                <div class="lock-hub" id="lockHub" onclick="togglePinModal()">
                     <div class="scan-laser" id="scanLaser"></div>
                     
                     <!-- SVG Cadenas Haute Précision Style Apple -->
@@ -1373,15 +1368,6 @@
             <div class="key-badge">
                 <div class="key-badge-dot"></div>
                 <span class="key-badge-text">📱 Clé Numérique • Redmi A3</span>
-            </div>
-
-            <!-- Bouton discret Code de secours -->
-            <div style="margin-top: 2px; margin-bottom: 6px;">
-                <button type="button" class="pin-trigger-pill" id="btnPinTrigger" onclick="togglePinModal()" title="Saisir le code PIN de secours (Touche Échap)">
-                    <span style="font-size: 13px;">🔢</span>
-                    <span>Code de secours</span>
-                    <span class="pin-pill-key">Échap</span>
-                </button>
             </div>
 
             <div class="footer-hint" id="footerHint">
@@ -1442,10 +1428,6 @@
                 <button type="button" class="pin-key action-clear" onclick="clearPin()" title="Effacer tout">C</button>
                 <button type="button" class="pin-key" onclick="pressDigit('0')">0</button>
                 <button type="button" class="pin-key action-back" onclick="deleteDigit()" title="Effacer le dernier chiffre">⌫</button>
-            </div>
-
-            <div class="pin-hint">
-                <span>Appuyez sur <b style="color: #a5b4fc; background: rgba(99,102,241,0.22); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(129,140,248,0.35);">[Échap]</b> pour fermer ou rouvrir</span>
             </div>
         </div>
     </div>
