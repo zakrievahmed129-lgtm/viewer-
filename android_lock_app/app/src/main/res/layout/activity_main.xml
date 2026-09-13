@@ -84,74 +84,96 @@
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="18dp">
 
-                <!-- Rangée Supérieure : Sélecteur de PC Cible & Badge Statut -->
+                <!-- EN-TÊTE DE CARTE : SÉLECTEUR D'APPAREIL SPATIAL VISION PRO (UNIFIÉ & ÉPURÉ) -->
                 <LinearLayout
                     android:id="@+id/layoutPcSelectorHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/bg_pill_badge"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="10dp"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <!-- Chip Sélecteur de PC cliquable -->
+                    <!-- Écrin de verre de l'icône appareil -->
+                    <FrameLayout
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_icon_squircle">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="🖥️"
+                            android:textSize="18sp" />
+                    </FrameLayout>
+
+                    <!-- Informations machine cible : Nom principal + Action tactile -->
                     <LinearLayout
                         android:id="@+id/layoutPcNameClickable"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="@drawable/bg_pill_badge"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="12dp">
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tvPcName"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:text="🖥️ pc-zakriev"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvBtnChangePc"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="▾"
-                            android:textColor="#38BDF8"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvPcName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="pc-zakriev"
+                                android:textColor="@color/text_primary"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvBtnChangePc"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="▾"
+                                android:textColor="#38BDF8"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvDiscoveredCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="1 PC mémorisé • Toucher pour changer"
+                            android:textColor="@color/text_muted"
+                            android:textSize="11sp" />
                     </LinearLayout>
 
-                    <!-- Statut En Ligne / Hors Ligne -->
+                    <!-- Badge de statut en ligne / hors ligne autonome & net -->
                     <TextView
                         android:id="@+id/tvPcLiveStatus"
                         android:layout_width="wrap_content"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_pill_badge"
-                        android:gravity="center"
-                        android:paddingHorizontal="12dp"
-                        android:text="🔴 HORS LIGNE"
+                        android:background="@drawable/bg_status_pill"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:singleLine="true"
+                        android:maxLines="1"
+                        android:ellipsize="none"
+                        android:text="● HORS LIGNE"
                         android:textColor="@color/rose"
-                        android:textSize="11sp"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.04"
                         android:textStyle="bold" />
                 </LinearLayout>
-
-                <!-- Sous-titre indicatif discret -->
-                <TextView
-                    android:id="@+id/tvDiscoveredCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="1 PC mémorisé • Toucher pour changer"
-                    android:textColor="@color/text_muted"
-                    android:textSize="11sp" />
 
                 <!-- RADAR BIOMÉTRIQUE SPATIAL (ÉCHO DU CADENAS PC) -->
                 <FrameLayout

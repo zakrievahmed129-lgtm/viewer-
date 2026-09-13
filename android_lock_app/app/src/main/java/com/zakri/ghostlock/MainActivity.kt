@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity() {
         topicCmd = "ghost_lock/$targetPc/cmd"
         topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
 
-        binding.tvPcName.text = "🖥️ $targetPc"
+        binding.tvPcName.text = targetPc
         updateDiscoveredCountUI()
 
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
@@ -911,8 +911,8 @@ class MainActivity : AppCompatActivity() {
         topicCmd = "ghost_lock/$targetPc/cmd"
         topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
 
-        binding.tvPcName.text = "🖥️ $targetPc"
-        binding.tvPcLiveStatus.text = "🟡 ATTENTE..."
+        binding.tvPcName.text = targetPc
+        binding.tvPcLiveStatus.text = "● ATTENTE..."
         binding.tvPcLiveStatus.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
 
         Thread {
@@ -1230,7 +1230,7 @@ class MainActivity : AppCompatActivity() {
                 val now = System.currentTimeMillis()
                 val isLive = lastPcPacketTimestamp > 0 && (now - lastPcPacketTimestamp) < 7000
                 if (!isLive) {
-                    binding.tvPcLiveStatus.text = "🔴 HORS LIGNE"
+                    binding.tvPcLiveStatus.text = "● HORS LIGNE"
                     binding.tvPcLiveStatus.setTextColor(getColor(R.color.rose))
                     if (lastPcPacketTimestamp == 0L) {
                         binding.tvLastSeen.text = "⚠️ En attente du signal du PC..."
@@ -1239,7 +1239,7 @@ class MainActivity : AppCompatActivity() {
                         binding.tvLastSeen.text = "⚠️ Inactif depuis ${elapsedSec}s (Dernier: $lastPcTimeStr)"
                     }
                 } else {
-                    binding.tvPcLiveStatus.text = "🟢 EN LIGNE"
+                    binding.tvPcLiveStatus.text = "● EN LIGNE"
                     binding.tvPcLiveStatus.setTextColor(getColor(R.color.emerald))
                 }
                 mainHandler.postDelayed(this, 1000)
