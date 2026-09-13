@@ -19,6 +19,7 @@
 - **Notifications & Alertes HUD PC vers Téléphone** : Envoi de messages personnalisés déclenchant un réveil de l'écran avec une carte holographique futuriste style Apple Vision Pro.
 
 ### 2. 📱 Application Android (`android_lock_app` / `GhostLock_VisionPro_RedmiA3.apk`)
+- **Sélecteur Multi-PC Dynamique au Démarrage** : Détection automatique en temps réel des PC connectés (`Pc-Zakriev`, `Bureau-Salon`, etc.) via MQTT. Permet de choisir instantanément avec quelle machine interagir et d'en changer à tout moment en cliquant sur le badge machine.
 - **Optimisée pour Xiaomi Redmi A3** (Android Go Edition).
 - **Service en arrière-plan 24/7** (`GhostLockService`) résistant aux optimisations de batterie.
 - **Streaming matériel** (`PhoneStreamService`) basé sur MediaProjection et CameraX.
@@ -28,7 +29,11 @@
 ### 3. 🔒 Bouclier de Verrouillage PC (`pc_lock_shield.py` & `lock_ui.html`)
 - **Interface Floue Spatial Vision Pro** : Défloutage cinématique ultra-fluide.
 - **Déverrouillage Biométrique Proximité Bluetooth (BLE)** : Déverrouille automatiquement le PC à l'approche de votre téléphone.
-- **Code PIN de secours discret** : Modal de déverrouillage manuel intégré (`Ctrl + Shift + Alt + U`).
+- **Code PIN de secours infaillible** :
+  - Touche unique directe **`F12`** ou raccourci **`Ctrl + U`** (également `Ctrl + Shift + Alt + U`).
+  - **Clic direct sur le cadenas central** ou sur le bouton d'écran `[ 🔢 Code de secours (F12) ]`.
+  - **Pavé numérique tactile & souris à l'écran** (`1-9`, `0`, `C`, `⌫`) pour déverrouiller sans clavier.
+  - Prise en charge native des claviers **AZERTY**, QWERTY et pavés numériques.
 - **Verrouillage total** des entrées (clavier, gestionnaire de tâches, barre des tâches).
 
 ### 4. 🌐 Web Viewer Centralisé (`ghost_web_viewer.html` & `ghost_viewer.py`)

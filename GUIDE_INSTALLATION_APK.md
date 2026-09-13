@@ -54,11 +54,23 @@ Vous disposez déjà d'**Android Studio** installé sur votre PC. Le projet est 
 
 ---
 
-## 🤫 4. Raccourci secret & Code PIN discret (En cas de téléphone déchargé)
+## 🤫 4. Raccourcis & Déverrouillage par Code PIN de Secours
 
-Si votre Redmi A3 n'a plus de batterie, vous pouvez déverrouiller votre PC discrètement :
-1. Sur le clavier de votre PC, faites la combinaison de touches secrète :
-   **`Ctrl + Shift + Alt + U`**
-2. Une petite boîte de dialogue discrète apparaît au centre.
-3. Tapez votre code secret : **`1234`** (modifiable dans [pc_lock_shield.py](file:///c:/Users/zakri/Desktop/les%20animations%20doivent%20etres%20incroyables/pc_lock_shield.py)).
-4. Appuyez sur Entrée : le PC est déverrouillé !
+Si votre Redmi A3 n'a plus de batterie ou n'est pas à portée de main :
+1. Plusieurs méthodes directes sont disponibles :
+   - **Touche unique** : Appuyez sur **`F12`**
+   - **Raccourci clavier** : Appuyez sur **`Ctrl + U`** (ou `Ctrl + Shift + Alt + U`)
+   - **À la souris** : Cliquez sur le **cadenas central** ou sur le bouton **`[ 🔢 Code de secours (F12) ]`**
+2. La fenêtre d'authentification s'ouvre au centre.
+3. Tapez votre code maître : **`1234`** (au clavier physique, au pavé numérique ou en cliquant directement sur le **pavé numérique virtuel à l'écran**).
+4. Dès le 4ème chiffre saisi, le PC se déverrouille instantanément !
+
+---
+
+## 💻 5. Sélecteur Multi-PC (Si vous avez plusieurs ordinateurs)
+
+Si vous utilisez le bouclier sur plusieurs machines :
+1. Dès l'ouverture de l'application sur votre Redmi A3, une boîte de dialogue s'ouvre automatiquement : **« Sélectionnez votre PC cible »**.
+2. Les ordinateurs connectés en temps réel au réseau sont automatiquement listés avec leur nom et leur état (En ligne / Verrouillé).
+3. Cliquez sur le PC avec lequel vous souhaitez interagir : toutes les actions (empreinte, streaming, notifications) cibleront directement cette machine.
+4. Vous pouvez changer de PC à tout moment en cliquant sur le badge machine en haut de l'écran.
