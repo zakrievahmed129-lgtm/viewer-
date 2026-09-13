@@ -58,10 +58,10 @@ Vous disposez déjà d'**Android Studio** installé sur votre PC. Le projet est 
 
 Si votre Redmi A3 n'a plus de batterie ou n'est pas à portée de main :
 1. Plusieurs méthodes directes sont disponibles :
-   - **Touche unique** : Appuyez sur **`F12`**
+   - **Touche unique instantanée** : Appuyez simplement sur **`Échap`** (ou `F12`)
    - **Raccourci clavier** : Appuyez sur **`Ctrl + U`** (ou `Ctrl + Shift + Alt + U`)
-   - **À la souris** : Cliquez sur le **cadenas central** ou sur le bouton **`[ 🔢 Code de secours (F12) ]`**
-2. La fenêtre d'authentification s'ouvre au centre.
+   - **À la souris** : Cliquez sur le **cadenas central** ou sur le bouton **`[ 🔢 Code de secours (Échap) ]`**
+2. La fenêtre d'authentification s'ouvre au centre avec une animation spatiale Vision Pro.
 3. Tapez votre code maître : **`1234`** (au clavier physique, au pavé numérique ou en cliquant directement sur le **pavé numérique virtuel à l'écran**).
 4. Dès le 4ème chiffre saisi, le PC se déverrouille instantanément !
 

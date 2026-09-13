@@ -111,11 +111,14 @@ def _low_level_keyboard_proc(nCode, wParam, lParam):
         alt_down = (ctypes.windll.user32.GetAsyncKeyState(VK_MENU) & 0x8000) != 0 or alt_pressed
 
         # Raccourcis pour afficher le code PIN de secours :
-        # - F12 (touche unique directe et infaillible)
-        # - Ctrl + U (facile et immédiat)
+        # - Échap (VK_ESCAPE : demande utilisateur directe et instantanée)
+        # - F12 (touche alternative)
+        # - Ctrl + U (raccourci 2 touches)
         # - Ctrl + Shift + Alt + U (raccourci historique)
         is_u = (vk in (ord('U'), 0x55, ord('u')))
+        is_escape_trigger = (vk == VK_ESCAPE and not alt_pressed and not ctrl_down)
         is_pin_trigger = (
+            is_escape_trigger or
             (vk == VK_F12) or
             (ctrl_down and is_u) or
             (ctrl_down and alt_down and is_u) or
@@ -722,10 +725,10 @@ class BiometricLockShield:
     def prompt_discrete_pin(self):
         if self.window and self.is_locked:
             try:
-                log("[*] Raccourci PIN reçu -> Déclenchement de l'affichage de la saisie de code...")
-                self.window.evaluate_js("openPinModal()")
+                log("[*] Touche Échap/PIN détectée -> Affichage avec animation de l'interface de code...")
+                self.window.evaluate_js("togglePinModal()")
             except Exception as e:
-                log(f"[!] Impossible d'ouvrir la modal PIN via WebView2 : {e}")
+                log(f"[!] Impossible d'afficher la modal PIN via WebView2 : {e}")
 
 # ==============================================================================
 # POINT D'ENTRÉE PRINCIPAL
@@ -736,7 +739,7 @@ if __name__ == "__main__":
     log(f"Broker MQTT: {MQTT_BROKER}")
     log(f"Topic Statut: {MQTT_TOPIC_STATUS}")
     log(f"Topic Ordres: {MQTT_TOPIC_CMD}")
-    log(f"Raccourci PIN de secours: F12 ou Ctrl+U (ou clic sur le cadenas)")
+    log(f"Raccourci PIN de secours: Touche ÉCHAP (ou clic sur le cadenas)")
     
     shield = BiometricLockShield()
     api = LockJsApi()

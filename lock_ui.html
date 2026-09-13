@@ -645,58 +645,144 @@
             box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
         }
 
-        /* Modal Saisie PIN Secrète */
+        /* ==================================================================== */
+        /* MODAL CODE PIN SECRÈTE AVEC ANIMATION SPATIALE APPLE VISION PRO     */
+        /* ==================================================================== */
         .pin-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(4, 6, 12, 0.85);
-            backdrop-filter: blur(24px);
+            background: rgba(3, 6, 16, 0);
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
             z-index: 100;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            perspective: 1200px;
+            transition: opacity 0.4s ease, backdrop-filter 0.4s ease, background 0.4s ease;
         }
 
         .pin-modal-overlay.active {
             opacity: 1;
             pointer-events: all;
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.16) 0%, rgba(4, 7, 18, 0.82) 75%);
+            backdrop-filter: blur(35px) saturate(180%);
+            -webkit-backdrop-filter: blur(35px) saturate(180%);
         }
 
         .pin-card {
-            background: rgba(18, 24, 40, 0.9);
-            backdrop-filter: blur(35px);
+            position: relative;
+            background: rgba(15, 22, 38, 0.88);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
             border: 1px solid rgba(255, 255, 255, 0.16);
-            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(99, 102, 241, 0.3);
-            border-radius: 28px;
-            padding: 32px 36px 28px 36px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(99, 102, 241, 0.3);
+            border-radius: 30px;
+            padding: 30px 36px 26px 36px;
             text-align: center;
             max-width: 380px;
             width: 90%;
-            transform: scale(0.95);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(60px) scale(0.85) rotateX(15deg);
+            opacity: 0;
+            filter: blur(14px);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease, filter 0.35s ease;
             user-select: none;
+            overflow: hidden;
         }
 
+        /* Contour lumineux holographique animé */
+        .pin-card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 30px;
+            padding: 1.5px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(129, 140, 248, 0.65) 40%, rgba(56, 189, 248, 0.75) 70%, rgba(168, 85, 247, 0.4) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0.85;
+            animation: borderAuroraGlow 5s ease-in-out infinite alternate;
+        }
+
+        @keyframes borderAuroraGlow {
+            0% { filter: hue-rotate(0deg) drop-shadow(0 0 8px rgba(99, 102, 241, 0.6)); }
+            100% { filter: hue-rotate(45deg) drop-shadow(0 0 16px rgba(56, 189, 248, 0.8)); }
+        }
+
+        /* Cinématique d'apparition spatiale spectaculaire */
         .pin-modal-overlay.active .pin-card {
-            transform: scale(1);
+            animation: pinCardSpatialEntrance 0.58s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes pinCardSpatialEntrance {
+            0% {
+                opacity: 0;
+                transform: translateY(70px) scale(0.8) rotateX(18deg);
+                filter: blur(18px);
+            }
+            60% {
+                opacity: 0.95;
+                filter: blur(2px);
+            }
+            80% {
+                transform: translateY(-8px) scale(1.025) rotateX(-2deg);
+                filter: blur(0px);
+                box-shadow: 0 40px 90px rgba(0, 0, 0, 0.85), 0 0 70px rgba(129, 140, 248, 0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotateX(0deg);
+                filter: blur(0px);
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 45px rgba(99, 102, 241, 0.3);
+            }
         }
 
         .pin-header-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+        }
+
+        .pin-iris-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(129, 140, 248, 0.4);
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #a5b4fc;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .pin-iris-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+            animation: irisPulseDot 1.6s ease-in-out infinite;
+        }
+
+        @keyframes irisPulseDot {
+            0%, 100% { opacity: 0.6; transform: scale(0.85); }
+            50% { opacity: 1; transform: scale(1.25); box-shadow: 0 0 12px #38bdf8; }
         }
 
         .pin-close-btn {
             background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             color: #94a3b8;
             width: 32px;
             height: 32px;
@@ -705,63 +791,77 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s ease;
+            font-size: 13px;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            outline: none;
         }
 
         .pin-close-btn:hover {
-            background: rgba(244, 63, 94, 0.2);
-            border-color: rgba(244, 63, 94, 0.5);
+            background: rgba(244, 63, 94, 0.25);
+            border-color: rgba(244, 63, 94, 0.6);
             color: #f43f5e;
-            transform: scale(1.08);
+            transform: scale(1.1);
         }
 
         .pin-title {
-            font-size: 20px;
+            font-size: 21px;
             font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.4px;
+            background: linear-gradient(135deg, #ffffff 30%, #c7d2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2px;
         }
 
         .pin-subtitle {
             font-size: 13px;
             color: #94a3b8;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .pin-dots-row {
             display: flex;
             justify-content: center;
             gap: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
 
         .pin-dot {
-            width: 16px;
-            height: 16px;
+            width: 17px;
+            height: 17px;
             border-radius: 50%;
             border: 2px solid rgba(99, 102, 241, 0.4);
-            background: transparent;
-            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: rgba(15, 23, 42, 0.7);
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+            transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .pin-dot.filled {
-            background: #818cf8;
-            border-color: #818cf8;
-            box-shadow: 0 0 12px rgba(129, 140, 248, 0.8);
-            transform: scale(1.15);
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            border-color: #a5b4fc;
+            box-shadow: 0 0 16px #818cf8, 0 0 28px rgba(56, 189, 248, 0.6);
+            transform: scale(1.2);
+            animation: dotFillPulse 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes dotFillPulse {
+            0% { transform: scale(0.6); opacity: 0.5; }
+            50% { transform: scale(1.35); }
+            100% { transform: scale(1.2); opacity: 1; }
         }
 
         .pin-dot.error {
             background: #f43f5e !important;
-            border-color: #f43f5e !important;
-            box-shadow: 0 0 14px #f43f5e !important;
+            border-color: #fda4af !important;
+            box-shadow: 0 0 18px #f43f5e !important;
+            transform: scale(1.1);
         }
 
         .pin-dot.success {
             background: #10b981 !important;
-            border-color: #34d399 !important;
-            box-shadow: 0 0 14px #10b981 !important;
+            border-color: #6ee7b7 !important;
+            box-shadow: 0 0 18px #10b981 !important;
+            transform: scale(1.25);
         }
 
         /* Pavé numérique tactile & clic souris */
@@ -770,12 +870,12 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             max-width: 250px;
-            margin: 0 auto 18px auto;
+            margin: 0 auto 16px auto;
         }
 
         .pin-key {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.13);
             color: #f1f5f9;
             font-size: 20px;
             font-weight: 600;
@@ -791,16 +891,38 @@
             backdrop-filter: blur(10px);
         }
 
+        /* Animation d'apparition en cascade des touches */
+        .pin-modal-overlay.active .pin-key {
+            animation: keyItemPop 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+        }
+        .pin-modal-overlay.active .pin-key:nth-child(1) { animation-delay: 0.06s; }
+        .pin-modal-overlay.active .pin-key:nth-child(2) { animation-delay: 0.08s; }
+        .pin-modal-overlay.active .pin-key:nth-child(3) { animation-delay: 0.10s; }
+        .pin-modal-overlay.active .pin-key:nth-child(4) { animation-delay: 0.12s; }
+        .pin-modal-overlay.active .pin-key:nth-child(5) { animation-delay: 0.14s; }
+        .pin-modal-overlay.active .pin-key:nth-child(6) { animation-delay: 0.16s; }
+        .pin-modal-overlay.active .pin-key:nth-child(7) { animation-delay: 0.18s; }
+        .pin-modal-overlay.active .pin-key:nth-child(8) { animation-delay: 0.20s; }
+        .pin-modal-overlay.active .pin-key:nth-child(9) { animation-delay: 0.22s; }
+        .pin-modal-overlay.active .pin-key:nth-child(10) { animation-delay: 0.24s; }
+        .pin-modal-overlay.active .pin-key:nth-child(11) { animation-delay: 0.26s; }
+        .pin-modal-overlay.active .pin-key:nth-child(12) { animation-delay: 0.28s; }
+
+        @keyframes keyItemPop {
+            0% { opacity: 0; transform: translateY(14px) scale(0.85); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         .pin-key:hover {
-            background: rgba(99, 102, 241, 0.25);
-            border-color: rgba(129, 140, 248, 0.6);
+            background: rgba(99, 102, 241, 0.28);
+            border-color: rgba(129, 140, 248, 0.65);
             transform: translateY(-2px) scale(1.03);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
             color: #ffffff;
         }
 
         .pin-key:active {
-            transform: translateY(1px) scale(0.95);
+            transform: translateY(1px) scale(0.94);
             background: rgba(99, 102, 241, 0.45);
         }
 
@@ -914,7 +1036,7 @@
             <div class="radar-ring"></div>
             <div class="radar-ring"></div>
             
-            <div class="lock-hub" id="lockHub" onclick="openPinModal()" title="Cliquer pour saisir le code PIN de secours (F12)">
+            <div class="lock-hub" id="lockHub" onclick="togglePinModal()" title="Cliquer pour saisir le code PIN de secours (Échap)">
                 <div class="scan-laser" id="scanLaser"></div>
                 
                 <!-- SVG Cadenas Haute Définition avec Anse Mécanique Dynamique -->
@@ -941,10 +1063,10 @@
 
         <!-- Bouton discret Code de secours -->
         <div style="margin-top: 4px; margin-bottom: 8px;">
-            <button type="button" class="pin-trigger-pill" id="btnPinTrigger" onclick="openPinModal()" title="Saisir le code PIN de secours">
+            <button type="button" class="pin-trigger-pill" id="btnPinTrigger" onclick="togglePinModal()" title="Saisir le code PIN de secours (Touche Échap)">
                 <span style="font-size: 13px;">🔢</span>
                 <span>Code de secours</span>
-                <span class="pin-pill-key">F12</span>
+                <span class="pin-pill-key">Échap</span>
             </button>
         </div>
 
@@ -971,14 +1093,18 @@
         </div>
     </div>
 
-    <!-- Modal Secrète Code PIN (F12 / Ctrl+U / Clic) -->
+    <!-- Modal Secrète Code PIN avec Animation Spatiale (Touche Échap) -->
     <div class="pin-modal-overlay" id="pinModal" onclick="onPinOverlayClick(event)">
         <div class="pin-card" id="pinCard" onclick="event.stopPropagation()">
             <div class="pin-header-row">
-                <div class="pin-title">Authentification Secrète</div>
+                <div class="pin-iris-badge">
+                    <span class="pin-iris-dot"></span>
+                    <span>AUTHENTIFICATION PIN</span>
+                </div>
                 <button type="button" class="pin-close-btn" onclick="closePinModal()" title="Fermer (Échap)">✕</button>
             </div>
-            <div class="pin-subtitle">Saisissez le code maître à 4 chiffres</div>
+            <div class="pin-title">Code de Déverrouillage</div>
+            <div class="pin-subtitle">Saisissez votre code maître à 4 chiffres</div>
             
             <div class="pin-dots-row">
                 <div class="pin-dot" id="dot0"></div>
@@ -1004,8 +1130,7 @@
             </div>
 
             <div class="pin-hint">
-                <div>Touches <b>0-9</b>, pavé numérique ou clic souris</div>
-                <div style="margin-top: 4px; opacity: 0.7;">Touche <b>[Échap]</b> pour fermer</div>
+                <span>Appuyez sur <b style="color: #a5b4fc; background: rgba(99,102,241,0.22); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(129,140,248,0.35);">[Échap]</b> pour fermer ou rouvrir</span>
             </div>
         </div>
     </div>
@@ -1216,6 +1341,14 @@
         let enteredPin = "";
         let isSubmittingPin = false;
 
+        function togglePinModal() {
+            if (pinModal && pinModal.classList.contains('active')) {
+                closePinModal();
+            } else {
+                openPinModal();
+            }
+        }
+
         function openPinModal() {
             if (pinModal) {
                 pinModal.classList.add('active');
@@ -1308,7 +1441,15 @@
 
         // ÉCOUTEUR CLAVIER GLOBAL (Capture phase = priorité absolue)
         window.addEventListener('keydown', (e) => {
-            // 1. Raccourcis d'ouverture/fermeture :
+            // 1. Touche ÉCHAP : Déclencheur direct pour afficher / masquer l'interface de code
+            if (e.key === 'Escape' || e.code === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePinModal();
+                return;
+            }
+
+            // 2. Raccourcis complémentaires d'ouverture/fermeture :
             //    - Touche unique F12
             //    - Ctrl + U
             //    - Ctrl + Alt + U ou Ctrl + Shift + Alt + U
@@ -1320,23 +1461,12 @@
             if (isF12 || isCtrlU || isLegacyShortcut) {
                 e.preventDefault();
                 e.stopPropagation();
-                if (pinModal.classList.contains('active')) {
-                    closePinModal();
-                } else {
-                    openPinModal();
-                }
+                togglePinModal();
                 return;
             }
 
-            // 2. Traitement de la saisie quand la modal est ouverte
-            if (pinModal.classList.contains('active')) {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    closePinModal();
-                    return;
-                }
-
+            // 3. Traitement de la saisie quand la modal est ouverte
+            if (pinModal && pinModal.classList.contains('active')) {
                 if (e.key === 'Backspace') {
                     e.preventDefault();
                     e.stopPropagation();

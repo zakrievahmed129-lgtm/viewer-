@@ -30,8 +30,9 @@
 - **Interface Floue Spatial Vision Pro** : Défloutage cinématique ultra-fluide.
 - **Déverrouillage Biométrique Proximité Bluetooth (BLE)** : Déverrouille automatiquement le PC à l'approche de votre téléphone.
 - **Code PIN de secours infaillible** :
-  - Touche unique directe **`F12`** ou raccourci **`Ctrl + U`** (également `Ctrl + Shift + Alt + U`).
-  - **Clic direct sur le cadenas central** ou sur le bouton d'écran `[ 🔢 Code de secours (F12) ]`.
+  - Touche unique directe **`Échap`** (ou alternativement `F12`, `Ctrl + U`).
+  - **Animation Spatiale 3D Vision Pro** : Entrée cinématique avec contour holographique, badge iris et touches en cascade.
+  - **Clic direct sur le cadenas central** ou sur le bouton d'écran `[ 🔢 Code de secours (Échap) ]`.
   - **Pavé numérique tactile & souris à l'écran** (`1-9`, `0`, `C`, `⌫`) pour déverrouiller sans clavier.
   - Prise en charge native des claviers **AZERTY**, QWERTY et pavés numériques.
 - **Verrouillage total** des entrées (clavier, gestionnaire de tâches, barre des tâches).
