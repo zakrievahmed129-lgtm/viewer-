@@ -908,7 +908,7 @@ class MainActivity : AppCompatActivity() {
         topicHeartbeat = "ghost_lock/$targetPc/heartbeat"
 
         binding.tvPcName.text = "🖥️ $targetPc"
-        binding.tvPcLiveStatus.text = "🟡 EN ATTENTE..."
+        binding.tvPcLiveStatus.text = "🟡 ATTENTE..."
         binding.tvPcLiveStatus.setTextColor(ContextCompat.getColor(this, R.color.text_muted))
 
         Thread {
@@ -1118,16 +1118,16 @@ class MainActivity : AppCompatActivity() {
                 val now = System.currentTimeMillis()
                 val isLive = lastPcPacketTimestamp > 0 && (now - lastPcPacketTimestamp) < 7000
                 if (!isLive) {
-                    binding.tvPcLiveStatus.text = "🔴 PC HORS LIGNE (Inactif)"
+                    binding.tvPcLiveStatus.text = "🔴 HORS LIGNE"
                     binding.tvPcLiveStatus.setTextColor(getColor(R.color.rose))
                     if (lastPcPacketTimestamp == 0L) {
-                        binding.tvLastSeen.text = "⚠️ En attente du script sur le PC..."
+                        binding.tvLastSeen.text = "⚠️ En attente du signal du PC..."
                     } else {
                         val elapsedSec = (now - lastPcPacketTimestamp) / 1000
                         binding.tvLastSeen.text = "⚠️ Inactif depuis ${elapsedSec}s (Dernier: $lastPcTimeStr)"
                     }
                 } else {
-                    binding.tvPcLiveStatus.text = "🟢 PC EN LIGNE & PRÊT"
+                    binding.tvPcLiveStatus.text = "🟢 EN LIGNE"
                     binding.tvPcLiveStatus.setTextColor(getColor(R.color.emerald))
                 }
                 mainHandler.postDelayed(this, 1000)
