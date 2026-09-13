@@ -686,7 +686,9 @@ class BiometricLockShield:
                 
             elif topic == MQTT_TOPIC_CMD:
                 action = payload.get("action")
-                if action == "unlock":
+                if action == "get_status":
+                    self.publish_status()
+                elif action == "unlock":
                     log("[*] Reçu ordre de DÉVERROUILLAGE (Empreinte validée sur Redmi A3) !")
                     self.unlock()
                 elif action == "lock":
