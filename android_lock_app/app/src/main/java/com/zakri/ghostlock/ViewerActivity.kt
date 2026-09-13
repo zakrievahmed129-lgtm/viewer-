@@ -17,11 +17,15 @@ import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 import org.json.JSONObject
 
+import android.view.ViewGroup
+import java.util.concurrent.Executors
+
 class ViewerActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private var mqttClient: MqttClient? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val mqttExecutor = Executors.newSingleThreadExecutor()
     private var targetPc = "pc-zakriev"
     private var topicCmd = "ghost_lock/$targetPc/cmd"
     private var isHeartbeatActive = false
@@ -85,34 +89,56 @@ class ViewerActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
+        if (::webView.isInitialized && webView.canGoBack()) {
             webView.goBack()
         } else {
-            super.onBackPressed()
+            finish()
         }
     }
 
     override fun onDestroy() {
         isHeartbeatActive = false
-        mainHandler.removeCallbacks(heartbeatRunnable)
+        mainHandler.removeCallbacksAndMessages(null)
         sendMqttCommand("viewer_closed")
-        webView.destroy()
+        
+        // 1. Démonter proprement la WebView pour éviter tout deadlock / freeze Chromium
         try {
-            mqttClient?.disconnect()
-        } catch (e: Exception) {}
+            (webView.parent as? ViewGroup)?.removeView(webView)
+            webView.stopLoading()
+            webView.loadUrl("about:blank")
+            webView.clearHistory()
+            webView.removeAllViews()
+            webView.destroy()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 2. Déconnexion MQTT 100% asynchrone hors du thread UI
+        val clientToClose = mqttClient
+        mqttClient = null
+        mqttExecutor.execute {
+            try {
+                if (clientToClose != null && clientToClose.isConnected) {
+                    clientToClose.disconnectForcibly(500)
+                }
+                clientToClose?.close()
+            } catch (e: Exception) {}
+        }
+
         super.onDestroy()
     }
 
     private fun sendMqttCommand(action: String) {
-        Thread {
+        mqttExecutor.execute {
             try {
-                if (mqttClient == null || !mqttClient!!.isConnected) {
+                if (mqttClient == null || mqttClient?.isConnected != true) {
                     val clientId = "ViewerActivity_${System.currentTimeMillis()}"
                     mqttClient = MqttClient("tcp://broker.hivemq.com:1883", clientId, MemoryPersistence())
                     val options = MqttConnectOptions().apply {
                         isCleanSession = true
                         connectionTimeout = 5
-                        keepAliveInterval = 30
+                        keepAliveInterval = 15
+                        isAutomaticReconnect = true
                     }
                     mqttClient?.connect(options)
                 }
@@ -124,8 +150,8 @@ class ViewerActivity : AppCompatActivity() {
                 val msg = MqttMessage(json.toString().toByteArray()).apply { qos = 1 }
                 mqttClient?.publish(topicCmd, msg)
             } catch (e: Exception) {
-                e.printStackTrace()
+                // Ignore silent network failure in executor
             }
-        }.start()
+        }
     }
 }

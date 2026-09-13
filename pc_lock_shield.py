@@ -131,11 +131,23 @@ def _low_level_keyboard_proc(nCode, wParam, lParam):
                 threading.Thread(target=shield_instance.prompt_discrete_pin, daemon=True).start()
             return 1
 
+        # 1. BLOQUER INCONDITIONNELLEMENT F4 (Alt+F4, Ctrl+F4, F4 seul)
+        if vk == VK_F4:
+            return 1
+
+        # 2. BLOQUER toutes les touches Windows (Win, Win+Tab, Win+D, etc.)
         if vk in (VK_LWIN, VK_RWIN):
             return 1
-        if alt_pressed and vk in (VK_TAB, VK_ESCAPE, VK_F4):
+
+        # 3. BLOQUER TOUTE combinaison avec Alt (Alt+Tab, Alt+Espace, Alt+Echap, etc.)
+        # Alt+Espace ouvrait le menu système Windows permettant de déplacer la fenêtre !
+        if alt_down or alt_pressed:
             return 1
-        if ctrl_down and vk == VK_ESCAPE:
+
+        # 4. BLOQUER Ctrl+Echap, Ctrl+Espace, Ctrl+Tab, et touche menu contextuel (0x5D)
+        if ctrl_down and vk in (VK_ESCAPE, VK_TAB, 0x20):
+            return 1
+        if vk == 0x5D:  # VK_APPS
             return 1
 
     return ctypes.windll.user32.CallNextHookEx(keyboard_hook, nCode, wParam, lParam)
@@ -191,6 +203,88 @@ def cleanup_system():
     uninstall_keyboard_lock()
     set_taskbar_visible(True)
     set_taskmgr_disabled(False)
+
+# ==============================================================================
+# SÉCURISATION WIN32 DE LA FENÊTRE (ANTI-DÉPLACEMENT & ANCRAGE PLEIN ÉCRAN)
+# ==============================================================================
+def get_shield_hwnd():
+    try:
+        if shield_instance and shield_instance.window and hasattr(shield_instance.window, 'native'):
+            native_win = shield_instance.window.native
+            if hasattr(native_win, 'Handle'):
+                return int(native_win.Handle)
+    except Exception:
+        pass
+    return ctypes.windll.user32.FindWindowW(None, "GhostLock Shield")
+
+def pin_window_fullscreen(hwnd=None):
+    """Force la fenêtre à occuper l'intégralité de l'écran en position TOPMOST sans bouger"""
+    if hwnd is None:
+        hwnd = get_shield_hwnd()
+    if not hwnd:
+        return
+    try:
+        user32 = ctypes.windll.user32
+        SM_CXSCREEN = 0
+        SM_CYSCREEN = 1
+        SM_CXVIRTUALSCREEN = 78
+        SM_CYVIRTUALSCREEN = 79
+        SM_XVIRTUALSCREEN = 76
+        SM_YVIRTUALSCREEN = 77
+
+        vx = user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
+        vy = user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
+        vw = user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
+        vh = user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
+        if vw <= 0 or vh <= 0:
+            vx, vy = 0, 0
+            vw = user32.GetSystemMetrics(SM_CXSCREEN)
+            vh = user32.GetSystemMetrics(SM_CYSCREEN)
+
+        HWND_TOPMOST = -1
+        SWP_SHOWWINDOW = 0x0040
+        SWP_FRAMECHANGED = 0x0020
+        SWP_NOACTIVATE = 0x0010
+        user32.SetWindowPos(hwnd, HWND_TOPMOST, vx, vy, vw, vh, SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE)
+        user32.SetForegroundWindow(hwnd)
+    except Exception:
+        pass
+
+def harden_lock_window():
+    """Supprime les styles Win32 permettant le déplacement, redimensionnement ou fermeture"""
+    hwnd = get_shield_hwnd()
+    if not hwnd:
+        return
+    try:
+        user32 = ctypes.windll.user32
+        GWL_STYLE = -16
+        WS_POPUP = 0x80000000
+        WS_CAPTION = 0x00C00000
+        WS_THICKFRAME = 0x00040000
+        WS_MINIMIZEBOX = 0x00020000
+        WS_MAXIMIZEBOX = 0x00010000
+        WS_SYSMENU = 0x00080000
+
+        current_style = user32.GetWindowLongW(hwnd, GWL_STYLE)
+        new_style = (current_style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU)) | WS_POPUP
+        user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
+
+        # Vider le menu système pour neutraliser SC_MOVE, SC_SIZE, SC_CLOSE, etc.
+        hmenu = user32.GetSystemMenu(hwnd, False)
+        if hmenu:
+            SC_SIZE = 0xF000
+            SC_MOVE = 0xF010
+            SC_MINIMIZE = 0xF020
+            SC_MAXIMIZE = 0xF030
+            SC_CLOSE = 0xF060
+            SC_RESTORE = 0xF120
+            MF_BYCOMMAND = 0x0000
+            for sc in (SC_MOVE, SC_SIZE, SC_CLOSE, SC_MINIMIZE, SC_MAXIMIZE, SC_RESTORE):
+                user32.RemoveMenu(hmenu, sc, MF_BYCOMMAND)
+
+        pin_window_fullscreen(hwnd)
+    except Exception as e:
+        log(f"[!] Erreur hardening fenêtre: {e}")
 
 # ==============================================================================
 # CAPTURE HAUTE VITESSE DU BUREAU (WIN32 GDI - ~35ms)
@@ -367,6 +461,23 @@ class BiometricLockShield:
         self.last_viewer_heartbeat = 0.0
         self.ghost_watchdog_thread = threading.Thread(target=self._ghost_script_watchdog, daemon=True)
         self.ghost_watchdog_thread.start()
+
+        # Watchdog d'ancrage absolu plein écran (neutralise 100% tout déplacement ou redimensionnement)
+        self.pinning_watchdog_thread = threading.Thread(target=self._window_pinning_loop, daemon=True)
+        self.pinning_watchdog_thread.start()
+
+    def _window_pinning_loop(self):
+        """Maintient inconditionnellement la fenêtre immobile à (0, 0) et TOPMOST pendant le verrouillage"""
+        while True:
+            time.sleep(0.2)
+            if not self.is_locked:
+                continue
+            hwnd = get_shield_hwnd()
+            if hwnd:
+                try:
+                    pin_window_fullscreen(hwnd)
+                except Exception:
+                    pass
 
     def setup_mqtt(self):
         if not HAS_MQTT:
@@ -679,7 +790,10 @@ class BiometricLockShield:
                 # Étape 1 : Prépare l'affichage identique au bureau réel (aucun saut visuel)
                 self.window.evaluate_js("prepareLock()")
                 self.window.show()
-                # Étape 2 : Déclenche l'animation lente de flou spatial et de fermeture du cadenas
+                # Étape 2 : Sécurisation Win32 et ancrage plein écran absolu
+                harden_lock_window()
+                pin_window_fullscreen()
+                # Étape 3 : Déclenche l'animation lente de flou spatial et de fermeture du cadenas
                 self.window.evaluate_js("triggerLock()")
             except Exception as e:
                 log(f"[!] Erreur affichage fenêtre lock: {e}")
@@ -760,6 +874,14 @@ if __name__ == "__main__":
         background_color='#05060b',
         js_api=api
     )
+
+    def on_window_closing():
+        if shield and shield.is_locked:
+            log("[!] Tentative de fermeture de la fenêtre de verrouillage bloquée !")
+            return False
+        return True
+
+    shield.window.events.closing += on_window_closing
 
     def on_webview_ready():
         if "--unlocked" in sys.argv or "--bg" in sys.argv or "--background" in sys.argv:

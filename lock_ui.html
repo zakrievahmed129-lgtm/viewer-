@@ -14,6 +14,8 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-user-drag: none !important;
+            user-drag: none !important;
         }
 
         html, body {
@@ -24,6 +26,8 @@
             overflow: hidden;
             position: relative;
             color: #ffffff;
+            -webkit-app-region: no-drag !important;
+            cursor: default;
         }
 
         /* ==================================================================== */
@@ -1136,6 +1140,11 @@
     </div>
 
     <script>
+        // Neutralisation absolue de tout drag & drop, clic droit et sélection parasite
+        window.addEventListener('dragstart', (e) => e.preventDefault(), true);
+        window.addEventListener('contextmenu', (e) => e.preventDefault(), true);
+        window.addEventListener('selectstart', (e) => e.preventDefault(), true);
+
         // ====================================================================
         // GESTION DU CANVAS PARTICULES (60 FPS FLUIDE)
         // ====================================================================

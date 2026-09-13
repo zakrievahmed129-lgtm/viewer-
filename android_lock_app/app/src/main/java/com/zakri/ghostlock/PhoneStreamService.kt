@@ -896,17 +896,29 @@ class PhoneStreamService : Service() {
     private fun connectMqtt() {
         Thread {
             try {
-                val clientId = "RedmiA3_PhoneStream_${System.currentTimeMillis()}"
-                mqttClient = MqttClient(brokerUri, clientId, MemoryPersistence())
-                val options = MqttConnectOptions().apply {
-                    isCleanSession = true
-                    connectionTimeout = 10
-                    keepAliveInterval = 30
+                // Fermeture préalable propre de tout ancien client
+                val staleClient = mqttClient
+                mqttClient = null
+                if (staleClient != null) {
+                    try {
+                        if (staleClient.isConnected) staleClient.disconnectForcibly(500)
+                        staleClient.close()
+                    } catch (e: Exception) {}
                 }
 
-                mqttClient?.setCallback(object : MqttCallback {
+                val clientId = "RedmiA3_PhoneStream_${System.currentTimeMillis()}"
+                val client = MqttClient(brokerUri, clientId, MemoryPersistence())
+                val options = MqttConnectOptions().apply {
+                    isCleanSession = true
+                    connectionTimeout = 8
+                    keepAliveInterval = 15 // Maintien actif CGNAT 4G/LTE
+                    isAutomaticReconnect = true
+                    maxInflight = 50
+                }
+
+                client.setCallback(object : MqttCallback {
                     override fun connectionLost(cause: Throwable?) {
-                        mainHandler.postDelayed({ connectMqtt() }, 5000)
+                        mainHandler.postDelayed({ connectMqtt() }, 3000)
                     }
 
                     override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -959,11 +971,12 @@ class PhoneStreamService : Service() {
                     override fun deliveryComplete(token: IMqttDeliveryToken?) {}
                 })
 
-                mqttClient?.connect(options)
-                mqttClient?.subscribe(topicStreamCmd, 1)
+                client.connect(options)
+                client.subscribe(topicStreamCmd, 1)
+                mqttClient = client
                 publishStreamStatus()
             } catch (e: Exception) {
-                mainHandler.postDelayed({ connectMqtt() }, 5000)
+                mainHandler.postDelayed({ connectMqtt() }, 3000)
             }
         }.start()
     }
@@ -1048,7 +1061,16 @@ class PhoneStreamService : Service() {
         unregisterScreenStateReceiver()
         isServerRunning = false
         try { serverSocket?.close() } catch (e: Exception) {}
-        try { mqttClient?.disconnect() } catch (e: Exception) {}
+        val clientToClose = mqttClient
+        mqttClient = null
+        Thread {
+            try {
+                if (clientToClose != null && clientToClose.isConnected) {
+                    clientToClose.disconnectForcibly(500)
+                }
+                clientToClose?.close()
+            } catch (e: Exception) {}
+        }.start()
         super.onDestroy()
     }
 

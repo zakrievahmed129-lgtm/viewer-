@@ -37,6 +37,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.net.Uri
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.PowerManager
 import android.app.Dialog
 import android.graphics.Color
@@ -88,6 +90,9 @@ class MainActivity : AppCompatActivity() {
 
     private var mqttClient: MqttClient? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private val reconnectRunnable = Runnable { connectMqtt() }
+    private var isConnectingMqtt = false
 
     private lateinit var executor: Executor
     private lateinit var biometricPrompt: BiometricPrompt
@@ -188,6 +193,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         connectMqtt()
+        registerNetworkMonitor()
         startHeartbeatLoop()
         startPcWatchdogLoop()
         startRadarRingAnimations()
@@ -632,24 +638,78 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {}
     }
 
-    private fun connectMqtt() {
-        Thread {
-            try {
-                val clientId = "RedmiA3_GhostLock_${System.currentTimeMillis()}"
-                mqttClient = MqttClient(brokerUri, clientId, MemoryPersistence())
-                val options = MqttConnectOptions().apply {
-                    isCleanSession = true
-                    connectionTimeout = 10
-                    keepAliveInterval = 30
+    private fun registerNetworkMonitor() {
+        try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    mainHandler.post {
+                        binding.tvCloudStatus.text = "RÉSEAU DÉTECTÉ..."
+                        binding.tvCloudStatus.setTextColor(getColor(R.color.emerald))
+                    }
+                    scheduleMqttReconnect(200)
                 }
 
-                mqttClient?.setCallback(object : MqttCallback {
+                override fun onLost(network: Network) {
+                    mainHandler.post {
+                        binding.tvCloudStatus.text = "TRANSITION RÉSEAU..."
+                        binding.tvCloudStatus.setTextColor(getColor(R.color.orange))
+                    }
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                cm.registerDefaultNetworkCallback(networkCallback!!)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun scheduleMqttReconnect(delayMs: Long) {
+        mainHandler.removeCallbacks(reconnectRunnable)
+        mainHandler.postDelayed(reconnectRunnable, delayMs)
+    }
+
+    private fun connectMqtt() {
+        mainHandler.removeCallbacks(reconnectRunnable)
+        Thread {
+            synchronized(this) {
+                if (isConnectingMqtt) return@Thread
+                isConnectingMqtt = true
+            }
+            try {
+                // Fermeture préalable propre et asynchrone de toute socket résiduelle
+                val staleClient = mqttClient
+                mqttClient = null
+                if (staleClient != null) {
+                    try {
+                        if (staleClient.isConnected) staleClient.disconnectForcibly(500)
+                        staleClient.close()
+                    } catch (e: Exception) {}
+                }
+
+                mainHandler.post {
+                    binding.tvCloudStatus.text = "CONNEXION (4G/Wi-Fi)..."
+                    binding.tvCloudStatus.setTextColor(getColor(R.color.text_muted))
+                }
+
+                val clientId = "RedmiA3_GhostLock_${System.currentTimeMillis()}"
+                val client = MqttClient(brokerUri, clientId, MemoryPersistence())
+                val options = MqttConnectOptions().apply {
+                    isCleanSession = true
+                    connectionTimeout = 8
+                    keepAliveInterval = 15 // Maintien actif de la translation NAT CGNAT des opérateurs mobiles (4G/LTE)
+                    isAutomaticReconnect = true
+                    maxInflight = 50
+                }
+
+                client.setCallback(object : MqttCallback {
                     override fun connectionLost(cause: Throwable?) {
                         mainHandler.post {
-                            binding.tvCloudStatus.text = "CLOUD HORS LIGNE"
+                            binding.tvCloudStatus.text = "RECONNEXION (4G)..."
                             binding.tvCloudStatus.setTextColor(getColor(R.color.rose))
                         }
-                        mainHandler.postDelayed({ connectMqtt() }, 5000)
+                        scheduleMqttReconnect(2500)
                     }
 
                     override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -694,11 +754,13 @@ class MainActivity : AppCompatActivity() {
                     override fun deliveryComplete(token: IMqttDeliveryToken?) {}
                 })
 
-                mqttClient?.connect(options)
-                mqttClient?.subscribe("ghost_lock/+/status", 1)
-                mqttClient?.subscribe(topicStatus, 1)
-                mqttClient?.subscribe(topicCmd, 1)
-                mqttClient?.subscribe("ghost_lock/$targetPc/phone_stream/cmd", 1)
+                client.connect(options)
+                client.subscribe("ghost_lock/+/status", 1)
+                client.subscribe(topicStatus, 1)
+                client.subscribe(topicCmd, 1)
+                client.subscribe("ghost_lock/$targetPc/phone_stream/cmd", 1)
+
+                mqttClient = client
 
                 // Demande immédiate d'état du PC
                 try {
@@ -707,7 +769,7 @@ class MainActivity : AppCompatActivity() {
                         put("device", "redmi_a3")
                         put("timestamp", System.currentTimeMillis())
                     }
-                    mqttClient?.publish(topicCmd, MqttMessage(req.toString().toByteArray()).apply { qos = 1 })
+                    client.publish(topicCmd, MqttMessage(req.toString().toByteArray()).apply { qos = 1 })
                 } catch (e: Exception) {}
 
                 mainHandler.post {
@@ -717,10 +779,14 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 mainHandler.post {
-                    binding.tvCloudStatus.text = "ERREUR CLOUD"
+                    binding.tvCloudStatus.text = "RECONNEXION CLOUD..."
                     binding.tvCloudStatus.setTextColor(getColor(R.color.rose))
                 }
-                mainHandler.postDelayed({ connectMqtt() }, 5000)
+                scheduleMqttReconnect(3500)
+            } finally {
+                synchronized(this) {
+                    isConnectingMqtt = false
+                }
             }
         }.start()
     }
@@ -1214,7 +1280,23 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {}
         try {
-            mqttClient?.disconnect()
+            if (networkCallback != null) {
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                cm.unregisterNetworkCallback(networkCallback!!)
+                networkCallback = null
+            }
         } catch (e: Exception) {}
+
+        mainHandler.removeCallbacks(reconnectRunnable)
+        val clientToClose = mqttClient
+        mqttClient = null
+        Thread {
+            try {
+                if (clientToClose != null && clientToClose.isConnected) {
+                    clientToClose.disconnectForcibly(500)
+                }
+                clientToClose?.close()
+            } catch (e: Exception) {}
+        }.start()
     }
 }

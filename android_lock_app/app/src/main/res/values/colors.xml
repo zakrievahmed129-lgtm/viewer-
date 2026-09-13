@@ -28,6 +28,9 @@
     <color name="rose_glow">#25F43F5E</color>
     <color name="rose_border">#FB7185</color>
     
+    <color name="orange">#F59E0B</color>
+    <color name="sky">#38BDF8</color>
+    
     <!-- Typographie Vision Pro -->
     <color name="text_primary">#F8FAFC</color>
     <color name="text_secondary">#94A3B8</color>
