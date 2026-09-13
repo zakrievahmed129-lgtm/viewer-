@@ -1007,16 +1007,75 @@ class BiometricLockShield:
             except Exception as e:
                 log(f"[!] Impossible d'afficher la modal PIN via WebView2 : {e}")
 
+_single_instance_mutex = None
+
+def check_single_instance():
+    """Garantit qu'une seule instance du bouclier tourne à la fois.
+    Si une instance tourne déjà et que l'utilisateur lance pc_lock_shield sans --bg,
+    on envoie un signal MQTT pour verrouiller l'instance existante."""
+    global _single_instance_mutex
+    ERROR_ALREADY_EXISTS = 183
+    _single_instance_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "Global\\GhostLockShield_SingleInstance_Mutex")
+    if ctypes.windll.kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+        is_bg_request = any(arg in sys.argv for arg in ("--bg", "--background", "--unlocked"))
+        if not is_bg_request or "--lock" in sys.argv:
+            try:
+                import paho.mqtt.publish as publish
+                publish.single(MQTT_TOPIC_CMD, json.dumps({"action": "lock"}), hostname=MQTT_BROKER)
+                log("[*] Instance existante notifiée pour verrouillage immédiat.")
+            except Exception:
+                pass
+        sys.exit(0)
+
+def ensure_autostart_configured():
+    """Configure le démarrage automatique instantané en arrière-plan à chaque redémarrage"""
+    try:
+        script_path = os.path.abspath(__file__)
+        script_dir = os.path.dirname(script_path)
+        python_exe = sys.executable
+        dir_name = os.path.dirname(python_exe)
+        pythonw_candidate = os.path.join(dir_name, "pythonw.exe")
+        launcher = pythonw_candidate if os.path.isfile(pythonw_candidate) else python_exe
+
+        cmd_run = f'"{launcher}" "{script_path}" --bg'
+
+        # 1. Registre HKCU Run
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE)
+            winreg.SetValueEx(key, "GhostLock_Shield", 0, winreg.REG_SZ, cmd_run)
+            winreg.CloseKey(key)
+        except Exception:
+            pass
+
+        # 2. Lanceur VBS silencieux dans Startup (shell:startup)
+        try:
+            appdata = os.environ.get("APPDATA", "")
+            startup_dir = os.path.join(appdata, r"Microsoft\Windows\Start Menu\Programs\Startup")
+            if os.path.isdir(startup_dir):
+                vbs_file = os.path.join(startup_dir, "GhostLockShield.vbs")
+                vbs_content = (
+                    'Set WshShell = CreateObject("WScript.Shell")\r\n'
+                    f'WshShell.CurrentDirectory = "{script_dir}"\r\n'
+                    f'WshShell.Run """{launcher}"" ""{script_path}"" --bg", 0, False\r\n'
+                )
+                with open(vbs_file, "w", encoding="utf-8") as f:
+                    f.write(vbs_content)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
 # ==============================================================================
 # POINT D'ENTRÉE PRINCIPAL
 # ==============================================================================
 if __name__ == "__main__":
+    check_single_instance()
+    ensure_autostart_configured()
     log(f"=== GHOST BIOMETRIC LOCK SHIELD (HTML5/CSS3/JS WEBVIEW2) ===")
     log(f"Machine: {DEVICE_NAME}")
     log(f"Broker MQTT: {MQTT_BROKER}")
     log(f"Topic Statut: {MQTT_TOPIC_STATUS}")
     log(f"Topic Ordres: {MQTT_TOPIC_CMD}")
-    log(f"Raccourci PIN de secours: Touche ÉCHAP (ou clic sur le cadenas)")
     
     shield = BiometricLockShield()
     api = LockJsApi()
